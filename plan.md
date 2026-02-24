@@ -23,7 +23,7 @@ See [`plans/README.md`](./plans/README.md) for the full index.
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| [Phase 1](plans/phase-1-canvas-foundation.md) | Canvas + Physics Foundation | not started |
+| [Phase 1](plans/phase-1-canvas-foundation.md) | Canvas + Physics Foundation | done |
 | [Phase 2](plans/phase-2-visual-properties-devpanel.md) | Visual Encoding + Properties + Dev Panel | not started |
 | [Phase 3](plans/phase-3-nl-chat.md) | Chat-style NL Input | not started |
 | [Phase 4](plans/phase-4-undo-persistence.md) | Undo/Redo + Persistence | not started |

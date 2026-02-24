@@ -1,6 +1,6 @@
 # Phase 1: Canvas + Physics Foundation
 
-**Status**: not started
+**Status**: done
 **Spec refs**: [visual-encoding](../specs/visual-encoding.md), [canvas-interactions](../specs/canvas-interactions.md)
 **Goal**: A working Obsidian-style force graph with basic interaction.
 
