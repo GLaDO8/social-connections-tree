@@ -1,4 +1,9 @@
-import type { RelationshipCategory, RelationshipType } from "@/types/graph";
+import { DEFAULT_BOND_STRENGTHS } from "@/lib/graph-constants";
+import type {
+	BondStrength,
+	RelationshipCategory,
+	RelationshipType,
+} from "@/types/graph";
 
 const ROMANTIC_TYPES: ReadonlySet<RelationshipType> = new Set([
 	"partner",
@@ -32,6 +37,10 @@ export function getRelationshipCategory(
 	if (FAMILY_TYPES.has(type)) return "family";
 	if (PROFESSIONAL_TYPES.has(type)) return "professional";
 	return "default";
+}
+
+export function getDefaultBondStrength(type: RelationshipType): BondStrength {
+	return DEFAULT_BOND_STRENGTHS[type];
 }
 
 /**

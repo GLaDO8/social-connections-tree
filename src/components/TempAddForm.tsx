@@ -13,16 +13,11 @@ import {
 } from "@/components/ui/select";
 import { useGraph } from "@/context/GraphContext";
 import { RELATIONSHIP_TYPES } from "@/lib/graph-constants";
-import { getRelationshipCategory } from "@/lib/graph-utils";
-import type { BondStrength, RelationshipType } from "@/types/graph";
-
-const BOND_STRENGTHS: { value: BondStrength; label: string }[] = [
-	{ value: 1, label: "1 (distant)" },
-	{ value: 2, label: "2 (casual)" },
-	{ value: 3, label: "3 (regular)" },
-	{ value: 4, label: "4 (close)" },
-	{ value: 5, label: "5 (inseparable)" },
-];
+import {
+	getDefaultBondStrength,
+	getRelationshipCategory,
+} from "@/lib/graph-utils";
+import type { RelationshipType } from "@/types/graph";
 
 export default function TempAddForm() {
 	const { state, dispatch } = useGraph();
@@ -30,7 +25,6 @@ export default function TempAddForm() {
 	const [name, setName] = useState("");
 	const [connectToId, setConnectToId] = useState("");
 	const [relType, setRelType] = useState<RelationshipType>("friend");
-	const [bondStrength, setBondStrength] = useState<BondStrength>(3);
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -46,7 +40,7 @@ export default function TempAddForm() {
 			type: relType,
 			category: getRelationshipCategory(relType),
 			label: relType.replace(/_/g, " "),
-			bondStrength,
+			bondStrength: getDefaultBondStrength(relType),
 		};
 
 		if (existingPerson) {
@@ -69,7 +63,6 @@ export default function TempAddForm() {
 		setName("");
 		setConnectToId("");
 		setRelType("friend");
-		setBondStrength(3);
 	}
 
 	return (
@@ -119,25 +112,6 @@ export default function TempAddForm() {
 							{RELATIONSHIP_TYPES.map((t) => (
 								<SelectItem key={t.value} value={t.value}>
 									{t.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
-				<div className="flex flex-col gap-1">
-					<Label>Bond</Label>
-					<Select
-						value={String(bondStrength)}
-						onValueChange={(v) => setBondStrength(Number(v) as BondStrength)}
-					>
-						<SelectTrigger className="w-40">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{BOND_STRENGTHS.map((b) => (
-								<SelectItem key={b.value} value={String(b.value)}>
-									{b.label}
 								</SelectItem>
 							))}
 						</SelectContent>

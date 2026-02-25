@@ -32,3 +32,20 @@ export const BOND_LABELS: Record<BondStrength, string> = {
 	4: "Close",
 	5: "Inseparable",
 };
+
+export const DEFAULT_BOND_STRENGTHS: Record<RelationshipType, BondStrength> = {
+	best_friend: 5,
+	partner: 5,
+	close_friend: 4,
+	family: 4,
+	sibling: 4,
+	childhood_friend: 3,
+	roommate: 3,
+	friend: 3,
+	crush: 3,
+	classmate: 2,
+	colleague: 2,
+	ex: 2,
+	acquaintance: 1,
+	other: 2,
+};
