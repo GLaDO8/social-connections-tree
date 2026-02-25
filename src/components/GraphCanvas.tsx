@@ -66,7 +66,7 @@ export default function GraphCanvas() {
   );
 
   // Canvas interactions (click, drag, hover)
-  const { hoveredNodeId } = useCanvasInteractions(
+  const { hoveredNodeId, dragBehavior } = useCanvasInteractions(
     canvasRef,
     state.persons,
     state.relationships,
@@ -94,7 +94,8 @@ export default function GraphCanvas() {
     scheduleRender,
   ]);
 
-  // Set up d3-zoom
+  // Set up d3-drag + d3-zoom (drag MUST be applied first so its
+  // stopImmediatePropagation blocks zoom's mousedown on node hits)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -110,21 +111,16 @@ export default function GraphCanvas() {
         scheduleRender();
       });
 
-    zoomBehavior.filter((event: Event) => {
-      if (event instanceof MouseEvent) {
-        if (event.button !== 0) return false;
-      }
-      return true;
-    });
-
     const selection = select(canvas);
+    selection.call(dragBehavior as any);
     selection.call(zoomBehavior);
     selection.on("dblclick.zoom", null);
 
     return () => {
+      selection.on(".drag", null);
       selection.on(".zoom", null);
     };
-  }, [scheduleRender]);
+  }, [scheduleRender, dragBehavior]);
 
   // Handle DPR for sharp rendering
   useEffect(() => {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { drag as d3Drag, type DragBehavior } from 'd3-drag';
 import type { Simulation } from 'd3-force';
 import type { Person, Relationship } from '@/types/graph';
 import { hitTestNode, hitTestEdge } from '@/lib/hit-testing';
@@ -17,21 +18,21 @@ export function useCanvasInteractions(
     onSelectNode: (id: string | null) => void;
     onSelectEdge: (id: string | null) => void;
   }
-): { hoveredNodeId: string | null } {
+): { hoveredNodeId: string | null; dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown> } {
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Mutable refs to avoid stale closures in event handlers.
-  const dragNodeRef = useRef<Person | null>(null);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const isDraggingRef = useRef(false);
-
-  // Keep latest values accessible without re-registering listeners.
   const personsRef = useRef(persons);
   personsRef.current = persons;
   const relationshipsRef = useRef(relationships);
   relationshipsRef.current = relationships;
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
+
+  // Track drag state across d3-drag events.
+  const dragSubjectRef = useRef<Person | null>(null);
+  const dragStartScreenRef = useRef<{ x: number; y: number } | null>(null);
+  const hasDraggedRef = useRef(false);
 
   const screenToCanvas = useCallback(
     (e: MouseEvent): { x: number; y: number } => {
@@ -45,78 +46,73 @@ export function useCanvasInteractions(
     [canvasRef, transformRef]
   );
 
+  // d3-drag behavior
+  const dragBehavior = useMemo(() => {
+    const behavior = d3Drag<HTMLCanvasElement, unknown>()
+      .clickDistance(DRAG_THRESHOLD)
+      .subject((event) => {
+        const sourceEvent = event.sourceEvent as MouseEvent;
+        const pos = screenToCanvas(sourceEvent);
+        const hit = hitTestNode(personsRef.current, pos.x, pos.y);
+        // Return the hit node or undefined (d3-drag bails on undefined subject,
+        // letting d3-zoom handle pan).
+        return hit ?? undefined;
+      })
+      .on('start', (event) => {
+        const node = event.subject as Person;
+        dragSubjectRef.current = node;
+        hasDraggedRef.current = false;
+        const sourceEvent = event.sourceEvent as MouseEvent;
+        dragStartScreenRef.current = { x: sourceEvent.clientX, y: sourceEvent.clientY };
+        // Don't pin or reheat yet — wait for threshold cross in 'drag' handler.
+      })
+      .on('drag', (event) => {
+        const node = dragSubjectRef.current;
+        if (!node) return;
+        const sourceEvent = event.sourceEvent as MouseEvent;
+        const pos = screenToCanvas(sourceEvent);
+
+        if (!hasDraggedRef.current) {
+          // Check our own threshold (d3-drag's clickDistance only suppresses click events,
+          // it still fires drag events for any movement).
+          const start = dragStartScreenRef.current!;
+          const dx = sourceEvent.clientX - start.x;
+          const dy = sourceEvent.clientY - start.y;
+          if (dx * dx + dy * dy < DRAG_THRESHOLD * DRAG_THRESHOLD) return;
+          hasDraggedRef.current = true;
+          // First real drag: pin + reheat
+          node.fx = pos.x;
+          node.fy = pos.y;
+          simulationRef.current?.alphaTarget(0.3).restart();
+        } else {
+          node.fx = pos.x;
+          node.fy = pos.y;
+        }
+      })
+      .on('end', () => {
+        const node = dragSubjectRef.current;
+        if (node && hasDraggedRef.current) {
+          // Release pin — unless ego node.
+          if (!node.isEgo) {
+            node.fx = null;
+            node.fy = null;
+          }
+          simulationRef.current?.alphaTarget(0);
+        }
+        dragSubjectRef.current = null;
+        dragStartScreenRef.current = null;
+        hasDraggedRef.current = false;
+      });
+
+    return behavior;
+  }, [screenToCanvas, simulationRef]);
+
+  // Click + hover + keyboard listeners
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // ------------------------------------------------------------------
-    // mousedown
-    // ------------------------------------------------------------------
-    function handleMouseDown(e: MouseEvent) {
-      const pos = screenToCanvas(e);
-      dragStartRef.current = { x: e.clientX, y: e.clientY };
-      isDraggingRef.current = false;
-
-      const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
-      if (hitNode) {
-        dragNodeRef.current = hitNode;
-        hitNode.fx = hitNode.x;
-        hitNode.fy = hitNode.y;
-        simulationRef.current?.alphaTarget(0.3).restart();
-      }
-    }
-
-    // ------------------------------------------------------------------
-    // mousemove
-    // ------------------------------------------------------------------
-    function handleMouseMove(e: MouseEvent) {
-      const pos = screenToCanvas(e);
-
-      if (dragNodeRef.current && dragStartRef.current) {
-        // Check if movement exceeds drag threshold.
-        const dx = e.clientX - dragStartRef.current.x;
-        const dy = e.clientY - dragStartRef.current.y;
-        if (!isDraggingRef.current && dx * dx + dy * dy > DRAG_THRESHOLD * DRAG_THRESHOLD) {
-          isDraggingRef.current = true;
-        }
-
-        // Update pinned position regardless (smooth from first move).
-        dragNodeRef.current.fx = pos.x;
-        dragNodeRef.current.fy = pos.y;
-        return;
-      }
-
-      // Hover hit-testing.
-      const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
-      const nodeId = hitNode?.id ?? null;
-      setHoveredNodeId(nodeId);
-      canvas!.style.cursor = nodeId ? 'pointer' : 'default';
-    }
-
-    // ------------------------------------------------------------------
-    // mouseup
-    // ------------------------------------------------------------------
-    function handleMouseUp(e: MouseEvent) {
-      const wasDragging = isDraggingRef.current;
-      const hadDragNode = dragNodeRef.current;
-
-      if (hadDragNode) {
-        // Release the pinned position — unless this is the ego node.
-        if (!hadDragNode.isEgo) {
-          hadDragNode.fx = null;
-          hadDragNode.fy = null;
-        }
-        simulationRef.current?.alphaTarget(0);
-        dragNodeRef.current = null;
-      }
-
-      dragStartRef.current = null;
-      isDraggingRef.current = false;
-
-      // If it was a drag gesture, skip selection.
-      if (wasDragging) return;
-
-      // Click: hit-test for selection.
+    function handleClick(e: MouseEvent) {
       const pos = screenToCanvas(e);
       const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
 
@@ -139,14 +135,20 @@ export function useCanvasInteractions(
         return;
       }
 
-      // Clicked empty space — clear selection.
+      // Empty space — clear selection.
       callbacksRef.current.onSelectNode(null);
       callbacksRef.current.onSelectEdge(null);
     }
 
-    // ------------------------------------------------------------------
-    // keydown (Escape)
-    // ------------------------------------------------------------------
+    function handleMouseMove(e: MouseEvent) {
+      if (e.target !== canvas) return;
+      const pos = screenToCanvas(e);
+      const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
+      const nodeId = hitNode?.id ?? null;
+      setHoveredNodeId(nodeId);
+      canvas!.style.cursor = nodeId ? 'pointer' : 'default';
+    }
+
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         callbacksRef.current.onSelectNode(null);
@@ -154,18 +156,16 @@ export function useCanvasInteractions(
       }
     }
 
-    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('click', handleClick);
     canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('click', handleClick);
       canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [canvasRef, simulationRef, transformRef, screenToCanvas]);
+  }, [canvasRef, screenToCanvas]);
 
-  return { hoveredNodeId };
+  return { hoveredNodeId, dragBehavior };
 }
