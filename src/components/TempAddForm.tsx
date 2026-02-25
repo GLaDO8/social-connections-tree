@@ -22,8 +22,9 @@ import type { RelationshipType } from "@/types/graph";
 export default function TempAddForm() {
 	const { state, dispatch } = useGraph();
 
+	const egoId = state.persons.find((p) => p.isEgo)?.id ?? "";
 	const [name, setName] = useState("");
-	const [connectToId, setConnectToId] = useState("");
+	const [connectToId, setConnectToId] = useState(egoId);
 	const [relType, setRelType] = useState<RelationshipType>("friend");
 
 	function handleSubmit(e: React.FormEvent) {
@@ -61,7 +62,7 @@ export default function TempAddForm() {
 		}
 
 		setName("");
-		setConnectToId("");
+		setConnectToId(egoId);
 		setRelType("friend");
 	}
 
