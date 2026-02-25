@@ -8,11 +8,13 @@ import {
 	useReducer,
 	useState,
 } from "react";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import {
 	createInitialState,
 	type GraphAction,
 	graphReducer,
 } from "@/lib/graph-reducer";
+import { loadGraph } from "@/lib/persistence";
 import type { SocialGraph } from "@/types/graph";
 
 // ---------------------------------------------------------------------------
@@ -34,14 +36,16 @@ const GraphContext = createContext<GraphContextValue | null>(null);
 // Provider
 // ---------------------------------------------------------------------------
 
+function initState(): SocialGraph {
+	return loadGraph() ?? createInitialState();
+}
+
 export function GraphProvider({ children }: { children: ReactNode }) {
-	const [state, dispatch] = useReducer(
-		graphReducer,
-		undefined,
-		createInitialState,
-	);
+	const [state, dispatch] = useReducer(graphReducer, undefined, initState);
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+
+	useAutoSave(state);
 
 	const value = useMemo<GraphContextValue>(
 		() => ({
