@@ -1,26 +1,19 @@
-import type { RelationshipType, RelationshipCategory } from "@/types/graph";
-
-/**
- * Generate a unique ID using the Web Crypto API.
- */
-export function generateId(): string {
-  return crypto.randomUUID();
-}
+import type { RelationshipCategory, RelationshipType } from "@/types/graph";
 
 const ROMANTIC_TYPES: ReadonlySet<RelationshipType> = new Set([
-  "partner",
-  "ex",
-  "crush",
+	"partner",
+	"ex",
+	"crush",
 ]);
 
 const FAMILY_TYPES: ReadonlySet<RelationshipType> = new Set([
-  "family",
-  "sibling",
+	"family",
+	"sibling",
 ]);
 
 const PROFESSIONAL_TYPES: ReadonlySet<RelationshipType> = new Set([
-  "colleague",
-  "classmate",
+	"colleague",
+	"classmate",
 ]);
 
 /**
@@ -33,12 +26,12 @@ const PROFESSIONAL_TYPES: ReadonlySet<RelationshipType> = new Set([
  *  - default:       everything else            → gray edges
  */
 export function getRelationshipCategory(
-  type: RelationshipType
+	type: RelationshipType,
 ): RelationshipCategory {
-  if (ROMANTIC_TYPES.has(type)) return "romantic";
-  if (FAMILY_TYPES.has(type)) return "family";
-  if (PROFESSIONAL_TYPES.has(type)) return "professional";
-  return "default";
+	if (ROMANTIC_TYPES.has(type)) return "romantic";
+	if (FAMILY_TYPES.has(type)) return "family";
+	if (PROFESSIONAL_TYPES.has(type)) return "professional";
+	return "default";
 }
 
 /**
@@ -46,12 +39,12 @@ export function getRelationshipCategory(
  * Index into this array with `cohorts.length % DEFAULT_COHORT_COLORS.length`.
  */
 export const DEFAULT_COHORT_COLORS: readonly string[] = [
-  "#6366F1", // indigo
-  "#EC4899", // pink
-  "#F59E0B", // amber
-  "#10B981", // emerald
-  "#3B82F6", // blue
-  "#8B5CF6", // violet
-  "#EF4444", // red
-  "#14B8A6", // teal
+	"#6366F1", // indigo
+	"#EC4899", // pink
+	"#F59E0B", // amber
+	"#10B981", // emerald
+	"#3B82F6", // blue
+	"#8B5CF6", // violet
+	"#EF4444", // red
+	"#14B8A6", // teal
 ];

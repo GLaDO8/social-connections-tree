@@ -1,184 +1,194 @@
 "use client";
 
-import { useRef, useEffect, useCallback, useState } from "react";
-import { zoom as d3Zoom, type ZoomBehavior } from "d3-zoom";
 import { select } from "d3-selection";
+import { zoom as d3Zoom, type ZoomBehavior } from "d3-zoom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGraph } from "@/context/GraphContext";
-import { useForceSimulation } from "@/hooks/useForceSimulation";
 import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
+import { useForceSimulation } from "@/hooks/useForceSimulation";
 import { render } from "@/lib/canvas-renderer";
+import type { ForceSimulation } from "@/lib/force-config";
 
 interface GraphCanvasProps {
-  onSimulationReady?: (ref: React.RefObject<any>) => void;
+	onSimulationReady?: (ref: React.RefObject<ForceSimulation | null>) => void;
 }
 
-export default function GraphCanvas({ onSimulationReady }: GraphCanvasProps = {}) {
-  const {
-    state,
-    selectedNodeId,
-    selectedEdgeId,
-    setSelectedNodeId,
-    setSelectedEdgeId,
-  } = useGraph();
+export default function GraphCanvas({
+	onSimulationReady,
+}: GraphCanvasProps = {}) {
+	const {
+		state,
+		selectedNodeId,
+		selectedEdgeId,
+		setSelectedNodeId,
+		setSelectedEdgeId,
+	} = useGraph();
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const transformRef = useRef({ x: 0, y: 0, k: 1 });
-  const sizeRef = useRef({ width: 0, height: 0 });
-  const rafRef = useRef<number | null>(null);
+	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const transformRef = useRef({ x: 0, y: 0, k: 1 });
+	const sizeRef = useRef({ width: 0, height: 0 });
+	const rafRef = useRef<number | null>(null);
 
-  // Keep render data in refs so scheduleRender can be stable (no stale closures)
-  const stateRef = useRef(state);
-  stateRef.current = state;
-  const selectedNodeIdRef = useRef(selectedNodeId);
-  selectedNodeIdRef.current = selectedNodeId;
-  const selectedEdgeIdRef = useRef(selectedEdgeId);
-  selectedEdgeIdRef.current = selectedEdgeId;
-  const hoveredNodeIdRef = useRef<string | null>(null);
+	// Keep render data in refs so scheduleRender can be stable (no stale closures)
+	const stateRef = useRef(state);
+	stateRef.current = state;
+	const selectedNodeIdRef = useRef(selectedNodeId);
+	selectedNodeIdRef.current = selectedNodeId;
+	const selectedEdgeIdRef = useRef(selectedEdgeId);
+	selectedEdgeIdRef.current = selectedEdgeId;
+	const hoveredNodeIdRef = useRef<string | null>(null);
 
-  // Track canvas size
-  const [width, height] = useCanvasSize(canvasRef, sizeRef);
+	// Track canvas size
+	const [width, height] = useCanvasSize(canvasRef, sizeRef);
 
-  // Stable render function — reads latest values from refs
-  const scheduleRender = useCallback(() => {
-    if (rafRef.current != null) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+	// Stable render function — reads latest values from refs
+	const scheduleRender = useCallback(() => {
+		if (rafRef.current != null) return;
+		rafRef.current = requestAnimationFrame(() => {
+			rafRef.current = null;
+			const canvas = canvasRef.current;
+			if (!canvas) return;
+			const ctx = canvas.getContext("2d");
+			if (!ctx) return;
 
-      const s = stateRef.current;
-      render(ctx, s.persons, s.relationships, s.cohorts, {
-        selectedNodeId: selectedNodeIdRef.current,
-        selectedEdgeId: selectedEdgeIdRef.current,
-        hoveredNodeId: hoveredNodeIdRef.current,
-        activeCohortId: s.activeCohortId,
-        width: sizeRef.current.width,
-        height: sizeRef.current.height,
-        transform: transformRef.current,
-      });
-    });
-  }, []);
+			const s = stateRef.current;
+			render(ctx, s.persons, s.relationships, s.cohorts, {
+				selectedNodeId: selectedNodeIdRef.current,
+				selectedEdgeId: selectedEdgeIdRef.current,
+				hoveredNodeId: hoveredNodeIdRef.current,
+				activeCohortId: s.activeCohortId,
+				width: sizeRef.current.width,
+				height: sizeRef.current.height,
+				transform: transformRef.current,
+			});
+		});
+	}, []);
 
-  // Force simulation — onTick triggers canvas redraw
-  const { simulationRef } = useForceSimulation(
-    state.persons,
-    state.relationships,
-    width,
-    height,
-    scheduleRender
-  );
+	// Force simulation — onTick triggers canvas redraw
+	const { simulationRef } = useForceSimulation(
+		state.persons,
+		state.relationships,
+		width,
+		height,
+		scheduleRender,
+	);
 
-  // Expose simulation ref to parent (for DevPanel)
-  useEffect(() => {
-    onSimulationReady?.(simulationRef);
-  }, [onSimulationReady, simulationRef]);
+	// Expose simulation ref to parent (for DevPanel)
+	useEffect(() => {
+		onSimulationReady?.(simulationRef);
+	}, [onSimulationReady, simulationRef]);
 
-  // Canvas interactions (click, drag, hover)
-  const { dragBehavior, hoveredNodeId, hoveredPosition } = useCanvasInteractions(
-    canvasRef,
-    state.persons,
-    state.relationships,
-    simulationRef,
-    transformRef,
-    hoveredNodeIdRef,
-    scheduleRender,
-    {
-      onSelectNode: setSelectedNodeId,
-      onSelectEdge: setSelectedEdgeId,
-    }
-  );
+	// Canvas interactions (click, drag, hover)
+	const { dragBehavior, hoveredNodeId, hoveredPosition } =
+		useCanvasInteractions(
+			canvasRef,
+			state.persons,
+			state.relationships,
+			simulationRef,
+			transformRef,
+			hoveredNodeIdRef,
+			scheduleRender,
+			{
+				onSelectNode: setSelectedNodeId,
+				onSelectEdge: setSelectedEdgeId,
+			},
+		);
 
-  // Re-render when React state changes (selection, graph data)
-  useEffect(() => {
-    scheduleRender();
-  }, [
-    state.persons,
-    state.relationships,
-    state.cohorts,
-    selectedNodeId,
-    selectedEdgeId,
-    scheduleRender,
-  ]);
+	// Re-render when React state changes (selection, graph data)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: deps are intentional triggers — scheduleRender reads from refs
+	useEffect(() => {
+		scheduleRender();
+	}, [
+		state.persons,
+		state.relationships,
+		state.cohorts,
+		selectedNodeId,
+		selectedEdgeId,
+		scheduleRender,
+	]);
 
-  // Set up d3-drag + d3-zoom (drag MUST be applied first so its
-  // stopImmediatePropagation blocks zoom's mousedown on node hits)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+	// Set up d3-drag + d3-zoom (drag MUST be applied first so its
+	// stopImmediatePropagation blocks zoom's mousedown on node hits)
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
 
-    const zoomBehavior: ZoomBehavior<HTMLCanvasElement, unknown> = d3Zoom<
-      HTMLCanvasElement,
-      unknown
-    >()
-      .scaleExtent([0.1, 5])
-      .on("zoom", (event) => {
-        const t = event.transform;
-        transformRef.current = { x: t.x, y: t.y, k: t.k };
-        scheduleRender();
-      });
+		const zoomBehavior: ZoomBehavior<HTMLCanvasElement, unknown> = d3Zoom<
+			HTMLCanvasElement,
+			unknown
+		>()
+			.scaleExtent([0.1, 5])
+			.on("zoom", (event) => {
+				const t = event.transform;
+				transformRef.current = { x: t.x, y: t.y, k: t.k };
+				scheduleRender();
+			});
 
-    const selection = select<HTMLCanvasElement, unknown>(canvas);
-    selection.call(dragBehavior);
-    selection.call(zoomBehavior);
-    selection.on("dblclick.zoom", null);
+		const selection = select<HTMLCanvasElement, unknown>(canvas);
+		selection.call(dragBehavior);
+		selection.call(zoomBehavior);
+		selection.on("dblclick.zoom", null);
 
-    return () => {
-      selection.on(".drag", null);
-      selection.on(".zoom", null);
-    };
-  }, [scheduleRender, dragBehavior]);
+		return () => {
+			selection.on(".drag", null);
+			selection.on(".zoom", null);
+		};
+	}, [scheduleRender, dragBehavior]);
 
-  // Handle DPR for sharp rendering
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.scale(dpr, dpr);
-    }
-    scheduleRender();
-  }, [width, height, scheduleRender]);
+	// Handle DPR for sharp rendering
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = width * dpr;
+		canvas.height = height * dpr;
+		const ctx = canvas.getContext("2d");
+		if (ctx) {
+			ctx.scale(dpr, dpr);
+		}
+		scheduleRender();
+	}, [width, height, scheduleRender]);
 
-  // Resolve hovered node data for tooltip
-  const hoveredNode = hoveredNodeId
-    ? state.persons.find((p) => p.id === hoveredNodeId) ?? null
-    : null;
-  const hoveredNodeCohort = hoveredNode?.cohortIds[0]
-    ? state.cohorts.find((c) => c.id === hoveredNode.cohortIds[0])
-    : null;
+	// Resolve hovered node data for tooltip
+	const hoveredNode = hoveredNodeId
+		? (state.persons.find((p) => p.id === hoveredNodeId) ?? null)
+		: null;
+	const hoveredNodeCohort = hoveredNode?.cohortIds[0]
+		? state.cohorts.find((c) => c.id === hoveredNode.cohortIds[0])
+		: null;
 
-  // Find edge under cursor for edge tooltip (via hovered edge tracking)
-  // Edge hover tooltip is shown via the properties panel on selection, not on hover.
-  // Node hover tooltip shown below.
+	// Find edge under cursor for edge tooltip (via hovered edge tracking)
+	// Edge hover tooltip is shown via the properties panel on selection, not on hover.
+	// Node hover tooltip shown below.
 
-  return (
-    <div className="relative w-full h-full">
-      <canvas
-        ref={canvasRef}
-        style={{ width: "100%", height: "100%" }}
-        className="block"
-      />
-      {hoveredNode && hoveredPosition && (
-        <div
-          className="pointer-events-none absolute z-10 rounded bg-gray-900/90 px-2 py-1 text-xs text-white shadow-lg"
-          style={{
-            left: hoveredPosition.x - (canvasRef.current?.getBoundingClientRect().left ?? 0),
-            top: hoveredPosition.y - (canvasRef.current?.getBoundingClientRect().top ?? 0) - 36,
-          }}
-        >
-          <span className="font-medium">{hoveredNode.name}</span>
-          {hoveredNodeCohort && (
-            <span className="ml-1.5 opacity-70">{hoveredNodeCohort.name}</span>
-          )}
-        </div>
-      )}
-    </div>
-  );
+	return (
+		<div className="relative w-full h-full">
+			<canvas
+				ref={canvasRef}
+				style={{ width: "100%", height: "100%" }}
+				className="block"
+			/>
+			{hoveredNode && hoveredPosition && (
+				<div
+					className="pointer-events-none absolute z-10 rounded bg-gray-900/90 px-2 py-1 text-xs text-white shadow-lg"
+					style={{
+						left:
+							hoveredPosition.x -
+							(canvasRef.current?.getBoundingClientRect().left ?? 0),
+						top:
+							hoveredPosition.y -
+							(canvasRef.current?.getBoundingClientRect().top ?? 0) -
+							36,
+					}}
+				>
+					<span className="font-medium">{hoveredNode.name}</span>
+					{hoveredNodeCohort && (
+						<span className="ml-1.5 opacity-70">{hoveredNodeCohort.name}</span>
+					)}
+				</div>
+			)}
+		</div>
+	);
 }
 
 // ---------------------------------------------------------------------------
@@ -186,39 +196,39 @@ export default function GraphCanvas({ onSimulationReady }: GraphCanvasProps = {}
 // ---------------------------------------------------------------------------
 
 function useCanvasSize(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  sizeRef: React.MutableRefObject<{ width: number; height: number }>
+	canvasRef: React.RefObject<HTMLCanvasElement | null>,
+	sizeRef: React.MutableRefObject<{ width: number; height: number }>,
 ): [number, number] {
-  const [size, setSize] = useState({ width: 800, height: 600 });
+	const [size, setSize] = useState({ width: 800, height: 600 });
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
 
-    const parent = canvas.parentElement;
-    if (!parent) return;
+		const parent = canvas.parentElement;
+		if (!parent) return;
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      const w = Math.round(width);
-      const h = Math.round(height);
-      sizeRef.current = { width: w, height: h };
-      setSize({ width: w, height: h });
-    });
+		const observer = new ResizeObserver((entries) => {
+			const entry = entries[0];
+			if (!entry) return;
+			const { width, height } = entry.contentRect;
+			const w = Math.round(width);
+			const h = Math.round(height);
+			sizeRef.current = { width: w, height: h };
+			setSize({ width: w, height: h });
+		});
 
-    observer.observe(parent);
+		observer.observe(parent);
 
-    const rect = parent.getBoundingClientRect();
-    sizeRef.current = {
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-    };
-    setSize(sizeRef.current);
+		const rect = parent.getBoundingClientRect();
+		sizeRef.current = {
+			width: Math.round(rect.width),
+			height: Math.round(rect.height),
+		};
+		setSize(sizeRef.current);
 
-    return () => observer.disconnect();
-  }, [canvasRef, sizeRef]);
+		return () => observer.disconnect();
+	}, [canvasRef, sizeRef]);
 
-  return [size.width, size.height];
+	return [size.width, size.height];
 }

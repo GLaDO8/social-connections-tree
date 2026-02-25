@@ -1,30 +1,31 @@
 "use client";
 
 import {
-  createContext,
-  useContext,
-  useReducer,
-  useState,
-  type ReactNode,
+	createContext,
+	type ReactNode,
+	useContext,
+	useMemo,
+	useReducer,
+	useState,
 } from "react";
-import type { SocialGraph } from "@/types/graph";
 import {
-  graphReducer,
-  createInitialState,
-  type GraphAction,
+	createInitialState,
+	type GraphAction,
+	graphReducer,
 } from "@/lib/graph-reducer";
+import type { SocialGraph } from "@/types/graph";
 
 // ---------------------------------------------------------------------------
 // Context shape
 // ---------------------------------------------------------------------------
 
 interface GraphContextValue {
-  state: SocialGraph;
-  dispatch: React.Dispatch<GraphAction>;
-  selectedNodeId: string | null;
-  selectedEdgeId: string | null;
-  setSelectedNodeId: (id: string | null) => void;
-  setSelectedEdgeId: (id: string | null) => void;
+	state: SocialGraph;
+	dispatch: React.Dispatch<GraphAction>;
+	selectedNodeId: string | null;
+	selectedEdgeId: string | null;
+	setSelectedNodeId: (id: string | null) => void;
+	setSelectedEdgeId: (id: string | null) => void;
 }
 
 const GraphContext = createContext<GraphContextValue | null>(null);
@@ -34,24 +35,29 @@ const GraphContext = createContext<GraphContextValue | null>(null);
 // ---------------------------------------------------------------------------
 
 export function GraphProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(graphReducer, undefined, createInitialState);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+	const [state, dispatch] = useReducer(
+		graphReducer,
+		undefined,
+		createInitialState,
+	);
+	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+	const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
-  return (
-    <GraphContext.Provider
-      value={{
-        state,
-        dispatch,
-        selectedNodeId,
-        selectedEdgeId,
-        setSelectedNodeId,
-        setSelectedEdgeId,
-      }}
-    >
-      {children}
-    </GraphContext.Provider>
-  );
+	const value = useMemo<GraphContextValue>(
+		() => ({
+			state,
+			dispatch,
+			selectedNodeId,
+			selectedEdgeId,
+			setSelectedNodeId,
+			setSelectedEdgeId,
+		}),
+		[state, selectedNodeId, selectedEdgeId],
+	);
+
+	return (
+		<GraphContext.Provider value={value}>{children}</GraphContext.Provider>
+	);
 }
 
 // ---------------------------------------------------------------------------
@@ -59,9 +65,9 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 // ---------------------------------------------------------------------------
 
 export function useGraph(): GraphContextValue {
-  const ctx = useContext(GraphContext);
-  if (ctx === null) {
-    throw new Error("useGraph must be used within a <GraphProvider>");
-  }
-  return ctx;
+	const ctx = useContext(GraphContext);
+	if (ctx === null) {
+		throw new Error("useGraph must be used within a <GraphProvider>");
+	}
+	return ctx;
 }
