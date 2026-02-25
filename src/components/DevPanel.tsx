@@ -67,11 +67,20 @@ export default function DevPanel({
     setMounted(true);
   }, []);
 
+  // Resolve the simulation from the ref (may be a ref-of-ref from page.tsx)
+  function getSimulation() {
+    const holder = simulationRef.current;
+    if (!holder) return null;
+    // If holder is a RefObject (has .current), dereference it
+    if (typeof holder === "object" && "current" in holder) return holder.current;
+    return holder;
+  }
+
   // Apply settings to simulation whenever they change (after mount)
   const applyToSimulation = useCallback(
     (s: DevSettings) => {
-      const sim = simulationRef.current;
-      if (!sim) return;
+      const sim = getSimulation();
+      if (!sim || typeof sim.force !== "function") return;
 
       const charge = sim.force("charge");
       if (charge) charge.strength(s.repulsion);
@@ -89,13 +98,15 @@ export default function DevPanel({
 
       sim.alpha(0.3).restart();
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [simulationRef]
   );
 
-  // Apply loaded settings to simulation once mounted
+  // Apply loaded settings to simulation once mounted (with delay for simulation init)
   useEffect(() => {
     if (mounted) {
-      applyToSimulation(settings);
+      const timer = setTimeout(() => applyToSimulation(settings), 100);
+      return () => clearTimeout(timer);
     }
     // Only run when mounted flips to true
     // eslint-disable-next-line react-hooks/exhaustive-deps
