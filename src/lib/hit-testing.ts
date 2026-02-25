@@ -1,18 +1,51 @@
 import { quadtree, type Quadtree } from "d3-quadtree";
 import type { Person, Relationship } from "@/types/graph";
+import { NODE_RADIUS, EGO_RADIUS } from "./graph-constants";
 
-const NODE_RADIUS = 12;
-const EGO_RADIUS = 16;
 const EDGE_HIT_THRESHOLD = 8;
+
+// ---------------------------------------------------------------------------
+// Cached quadtree — rebuilt only when invalidateHitTestCache() is called
+// (typically on each simulation tick, not on every mouse event).
+// ---------------------------------------------------------------------------
+
+let cachedTree: Quadtree<Person & { x: number; y: number }> | null = null;
+let cacheGeneration = 0;
+let treeBuildGeneration = -1;
+
+export function invalidateHitTestCache(): void {
+  cacheGeneration++;
+}
+
+function getQuadtree(
+  persons: Person[]
+): Quadtree<Person & { x: number; y: number }> | null {
+  if (cachedTree && treeBuildGeneration === cacheGeneration) {
+    return cachedTree;
+  }
+
+  const tree = quadtree<Person & { x: number; y: number }>()
+    .x((d) => d.x)
+    .y((d) => d.y);
+
+  for (const p of persons) {
+    if (p.x !== undefined && p.y !== undefined) {
+      tree.add(p as Person & { x: number; y: number });
+    }
+  }
+
+  // Check if any nodes were added
+  if (tree.extent() === undefined) return null;
+
+  cachedTree = tree;
+  treeBuildGeneration = cacheGeneration;
+  return cachedTree;
+}
 
 // ---------------------------------------------------------------------------
 // Geometry helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Compute the shortest distance from point (px, py) to the line segment
- * defined by endpoints (x1, y1) and (x2, y2).
- */
 function pointToSegmentDistance(
   px: number,
   py: number,
@@ -25,14 +58,12 @@ function pointToSegmentDistance(
   const dy = y2 - y1;
   const lengthSq = dx * dx + dy * dy;
 
-  // Degenerate segment (source === target): fall back to point distance.
   if (lengthSq === 0) {
     const ex = px - x1;
     const ey = py - y1;
     return Math.sqrt(ex * ex + ey * ey);
   }
 
-  // Project (px, py) onto the infinite line and clamp to [0, 1].
   let t = ((px - x1) * dx + (py - y1) * dy) / lengthSq;
   t = Math.max(0, Math.min(1, t));
 
@@ -44,40 +75,20 @@ function pointToSegmentDistance(
 }
 
 // ---------------------------------------------------------------------------
-// Node hit-testing (quadtree-accelerated)
+// Node hit-testing (quadtree-accelerated, cached)
 // ---------------------------------------------------------------------------
 
-/**
- * Find the person whose rendered circle contains the canvas coordinate (x, y).
- * Uses a d3-quadtree for O(log n) lookup.
- *
- * Returns `null` if no node is within hit range.
- */
 export function hitTestNode(
   persons: Person[],
   x: number,
   y: number
 ): Person | null {
-  // Only consider persons that have been positioned by the simulation.
-  const positioned = persons.filter(
-    (p): p is Person & { x: number; y: number } =>
-      p.x !== undefined && p.y !== undefined
-  );
+  const tree = getQuadtree(persons);
+  if (!tree) return null;
 
-  if (positioned.length === 0) return null;
-
-  const tree: Quadtree<Person & { x: number; y: number }> = quadtree<
-    Person & { x: number; y: number }
-  >()
-    .x((d) => d.x)
-    .y((d) => d.y)
-    .addAll(positioned);
-
-  // The search radius must accommodate the largest possible node (ego).
   const nearest = tree.find(x, y, EGO_RADIUS);
   if (!nearest) return null;
 
-  // Verify the click actually falls inside the node's visual circle.
   const dx = x - nearest.x;
   const dy = y - nearest.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
@@ -90,22 +101,12 @@ export function hitTestNode(
 // Edge hit-testing (linear scan — fine for typical graph sizes)
 // ---------------------------------------------------------------------------
 
-/**
- * Find the relationship whose rendered edge is closest to the canvas
- * coordinate (x, y), provided it is within `EDGE_HIT_THRESHOLD` pixels.
- *
- * **Caller convention:** only invoke this when `hitTestNode` returns `null`
- * so that nodes always take priority over edges.
- *
- * Returns `null` if no edge is close enough.
- */
 export function hitTestEdge(
   relationships: Relationship[],
   persons: Person[],
   x: number,
   y: number
 ): Relationship | null {
-  // Build a lookup map for positioned persons.
   const personMap = new Map<string, Person & { x: number; y: number }>();
   for (const p of persons) {
     if (p.x !== undefined && p.y !== undefined) {

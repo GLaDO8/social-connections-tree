@@ -66,22 +66,21 @@ export default function GraphCanvas() {
   );
 
   // Canvas interactions (click, drag, hover)
-  const { hoveredNodeId, dragBehavior } = useCanvasInteractions(
+  const { dragBehavior } = useCanvasInteractions(
     canvasRef,
     state.persons,
     state.relationships,
     simulationRef,
     transformRef,
+    hoveredNodeIdRef,
+    scheduleRender,
     {
       onSelectNode: setSelectedNodeId,
       onSelectEdge: setSelectedEdgeId,
     }
   );
 
-  // Sync hovered node ref + trigger render
-  hoveredNodeIdRef.current = hoveredNodeId;
-
-  // Re-render when React state changes (selection, hover, graph data)
+  // Re-render when React state changes (selection, graph data)
   useEffect(() => {
     scheduleRender();
   }, [
@@ -90,7 +89,6 @@ export default function GraphCanvas() {
     state.cohorts,
     selectedNodeId,
     selectedEdgeId,
-    hoveredNodeId,
     scheduleRender,
   ]);
 
@@ -111,8 +109,8 @@ export default function GraphCanvas() {
         scheduleRender();
       });
 
-    const selection = select(canvas);
-    selection.call(dragBehavior as any);
+    const selection = select<HTMLCanvasElement, unknown>(canvas);
+    selection.call(dragBehavior);
     selection.call(zoomBehavior);
     selection.on("dblclick.zoom", null);
 

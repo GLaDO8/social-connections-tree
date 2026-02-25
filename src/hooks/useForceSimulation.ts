@@ -4,6 +4,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { forceCenter, type Simulation, type SimulationLinkDatum } from 'd3-force';
 import type { Person, Relationship } from '@/types/graph';
 import { createSimulation, syncData, reheat } from '@/lib/force-config';
+import { invalidateHitTestCache } from '@/lib/hit-testing';
 
 interface LinkDatum extends SimulationLinkDatum<Person> {
   id: string;
@@ -40,6 +41,7 @@ export function useForceSimulation(
     pinEgoNode(persons, width / 2, height / 2);
 
     sim.on('tick', () => {
+      invalidateHitTestCache();
       onTickRef.current();
     });
 

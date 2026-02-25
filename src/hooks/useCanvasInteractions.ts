@@ -1,26 +1,30 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { drag as d3Drag, type DragBehavior } from 'd3-drag';
-import type { Simulation } from 'd3-force';
 import type { Person, Relationship } from '@/types/graph';
 import { hitTestNode, hitTestEdge } from '@/lib/hit-testing';
 
 const DRAG_THRESHOLD = 5;
 
+interface SimulationHandle {
+  alphaTarget(alpha: number): SimulationHandle;
+  restart(): SimulationHandle;
+}
+
 export function useCanvasInteractions(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   persons: Person[],
   relationships: Relationship[],
-  simulationRef: React.RefObject<Simulation<Person, any> | null>,
+  simulationRef: React.RefObject<SimulationHandle | null>,
   transformRef: React.RefObject<{ x: number; y: number; k: number }>,
+  hoveredNodeIdRef: React.MutableRefObject<string | null>,
+  scheduleRender: () => void,
   callbacks: {
     onSelectNode: (id: string | null) => void;
     onSelectEdge: (id: string | null) => void;
   }
-): { hoveredNodeId: string | null; dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown> } {
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-
+): { dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown> } {
   // Mutable refs to avoid stale closures in event handlers.
   const personsRef = useRef(persons);
   personsRef.current = persons;
@@ -36,7 +40,9 @@ export function useCanvasInteractions(
 
   const screenToCanvas = useCallback(
     (e: MouseEvent): { x: number; y: number } => {
-      const rect = canvasRef.current!.getBoundingClientRect();
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
+      const rect = canvas.getBoundingClientRect();
       const t = transformRef.current;
       return {
         x: (e.clientX - rect.left - t.x) / t.k,
@@ -46,41 +52,39 @@ export function useCanvasInteractions(
     [canvasRef, transformRef]
   );
 
-  // d3-drag behavior
+  // d3-drag behavior — dependencies are stable refs, so this is created once.
   const dragBehavior = useMemo(() => {
     const behavior = d3Drag<HTMLCanvasElement, unknown>()
       .clickDistance(DRAG_THRESHOLD)
       .subject((event) => {
-        const sourceEvent = event.sourceEvent as MouseEvent;
+        const sourceEvent = event.sourceEvent;
+        if (!(sourceEvent instanceof MouseEvent)) return undefined;
         const pos = screenToCanvas(sourceEvent);
         const hit = hitTestNode(personsRef.current, pos.x, pos.y);
-        // Return the hit node or undefined (d3-drag bails on undefined subject,
-        // letting d3-zoom handle pan).
         return hit ?? undefined;
       })
       .on('start', (event) => {
         const node = event.subject as Person;
         dragSubjectRef.current = node;
         hasDraggedRef.current = false;
-        const sourceEvent = event.sourceEvent as MouseEvent;
+        const sourceEvent = event.sourceEvent;
+        if (!(sourceEvent instanceof MouseEvent)) return;
         dragStartScreenRef.current = { x: sourceEvent.clientX, y: sourceEvent.clientY };
-        // Don't pin or reheat yet — wait for threshold cross in 'drag' handler.
       })
       .on('drag', (event) => {
         const node = dragSubjectRef.current;
         if (!node) return;
-        const sourceEvent = event.sourceEvent as MouseEvent;
+        const sourceEvent = event.sourceEvent;
+        if (!(sourceEvent instanceof MouseEvent)) return;
         const pos = screenToCanvas(sourceEvent);
 
         if (!hasDraggedRef.current) {
-          // Check our own threshold (d3-drag's clickDistance only suppresses click events,
-          // it still fires drag events for any movement).
-          const start = dragStartScreenRef.current!;
+          const start = dragStartScreenRef.current;
+          if (!start) return;
           const dx = sourceEvent.clientX - start.x;
           const dy = sourceEvent.clientY - start.y;
           if (dx * dx + dy * dy < DRAG_THRESHOLD * DRAG_THRESHOLD) return;
           hasDraggedRef.current = true;
-          // First real drag: pin + reheat
           node.fx = pos.x;
           node.fy = pos.y;
           simulationRef.current?.alphaTarget(0.3).restart();
@@ -92,7 +96,6 @@ export function useCanvasInteractions(
       .on('end', () => {
         const node = dragSubjectRef.current;
         if (node && hasDraggedRef.current) {
-          // Release pin — unless ego node.
           if (!node.isEgo) {
             node.fx = null;
             node.fy = null;
@@ -135,7 +138,6 @@ export function useCanvasInteractions(
         return;
       }
 
-      // Empty space — clear selection.
       callbacksRef.current.onSelectNode(null);
       callbacksRef.current.onSelectEdge(null);
     }
@@ -145,7 +147,10 @@ export function useCanvasInteractions(
       const pos = screenToCanvas(e);
       const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
       const nodeId = hitNode?.id ?? null;
-      setHoveredNodeId(nodeId);
+      if (hoveredNodeIdRef.current !== nodeId) {
+        hoveredNodeIdRef.current = nodeId;
+        scheduleRender();
+      }
       canvas!.style.cursor = nodeId ? 'pointer' : 'default';
     }
 
@@ -165,7 +170,7 @@ export function useCanvasInteractions(
       canvas.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [canvasRef, screenToCanvas]);
+  }, [canvasRef, screenToCanvas, hoveredNodeIdRef, scheduleRender]);
 
-  return { hoveredNodeId, dragBehavior };
+  return { dragBehavior };
 }
