@@ -8,7 +8,11 @@ import { useForceSimulation } from "@/hooks/useForceSimulation";
 import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
 import { render } from "@/lib/canvas-renderer";
 
-export default function GraphCanvas() {
+interface GraphCanvasProps {
+  onSimulationReady?: (ref: React.RefObject<any>) => void;
+}
+
+export default function GraphCanvas({ onSimulationReady }: GraphCanvasProps = {}) {
   const {
     state,
     selectedNodeId,
@@ -49,6 +53,7 @@ export default function GraphCanvas() {
         selectedNodeId: selectedNodeIdRef.current,
         selectedEdgeId: selectedEdgeIdRef.current,
         hoveredNodeId: hoveredNodeIdRef.current,
+        activeCohortId: s.activeCohortId,
         width: sizeRef.current.width,
         height: sizeRef.current.height,
         transform: transformRef.current,
@@ -65,8 +70,13 @@ export default function GraphCanvas() {
     scheduleRender
   );
 
+  // Expose simulation ref to parent (for DevPanel)
+  useEffect(() => {
+    onSimulationReady?.(simulationRef);
+  }, [onSimulationReady, simulationRef]);
+
   // Canvas interactions (click, drag, hover)
-  const { dragBehavior } = useCanvasInteractions(
+  const { dragBehavior, hoveredNodeId, hoveredPosition } = useCanvasInteractions(
     canvasRef,
     state.persons,
     state.relationships,
@@ -134,12 +144,40 @@ export default function GraphCanvas() {
     scheduleRender();
   }, [width, height, scheduleRender]);
 
+  // Resolve hovered node data for tooltip
+  const hoveredNode = hoveredNodeId
+    ? state.persons.find((p) => p.id === hoveredNodeId) ?? null
+    : null;
+  const hoveredNodeCohort = hoveredNode?.cohortIds[0]
+    ? state.cohorts.find((c) => c.id === hoveredNode.cohortIds[0])
+    : null;
+
+  // Find edge under cursor for edge tooltip (via hovered edge tracking)
+  // Edge hover tooltip is shown via the properties panel on selection, not on hover.
+  // Node hover tooltip shown below.
+
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100%", height: "100%" }}
-      className="block"
-    />
+    <div className="relative w-full h-full">
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%" }}
+        className="block"
+      />
+      {hoveredNode && hoveredPosition && (
+        <div
+          className="pointer-events-none absolute z-10 rounded bg-gray-900/90 px-2 py-1 text-xs text-white shadow-lg"
+          style={{
+            left: hoveredPosition.x - (canvasRef.current?.getBoundingClientRect().left ?? 0),
+            top: hoveredPosition.y - (canvasRef.current?.getBoundingClientRect().top ?? 0) - 36,
+          }}
+        >
+          <span className="font-medium">{hoveredNode.name}</span>
+          {hoveredNodeCohort && (
+            <span className="ml-1.5 opacity-70">{hoveredNodeCohort.name}</span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

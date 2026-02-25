@@ -27,6 +27,8 @@ export type GraphAction =
       };
     }
   | { type: "ADD_COHORT"; payload: Omit<Cohort, "id"> }
+  | { type: "UPDATE_COHORT"; payload: { id: string } & Partial<Cohort> }
+  | { type: "REMOVE_COHORT"; payload: { id: string } }
   | { type: "SET_ACTIVE_COHORT"; payload: { id: string | null } };
 
 // ---------------------------------------------------------------------------
@@ -163,6 +165,29 @@ export function graphReducer(
       return withTimestamp({
         ...state,
         cohorts: [...state.cohorts, cohort],
+      });
+    }
+
+    case "UPDATE_COHORT": {
+      const { id, ...updates } = action.payload;
+      return withTimestamp({
+        ...state,
+        cohorts: state.cohorts.map((c) =>
+          c.id === id ? { ...c, ...updates } : c,
+        ),
+      });
+    }
+
+    case "REMOVE_COHORT": {
+      const { id } = action.payload;
+      return withTimestamp({
+        ...state,
+        cohorts: state.cohorts.filter((c) => c.id !== id),
+        persons: state.persons.map((p) => ({
+          ...p,
+          cohortIds: p.cohortIds.filter((cid) => cid !== id),
+        })),
+        activeCohortId: state.activeCohortId === id ? null : state.activeCohortId,
       });
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { drag as d3Drag, type DragBehavior } from 'd3-drag';
 import type { Person, Relationship } from '@/types/graph';
 import { hitTestNode, hitTestEdge } from '@/lib/hit-testing';
@@ -24,7 +24,15 @@ export function useCanvasInteractions(
     onSelectNode: (id: string | null) => void;
     onSelectEdge: (id: string | null) => void;
   }
-): { dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown> } {
+): {
+  dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown>;
+  hoveredNodeId: string | null;
+  hoveredPosition: { x: number; y: number } | null;
+} {
+  // State for tooltip (only updates when hovered target changes, not on every mousemove)
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoveredPosition, setHoveredPosition] = useState<{ x: number; y: number } | null>(null);
+
   // Mutable refs to avoid stale closures in event handlers.
   const personsRef = useRef(persons);
   personsRef.current = persons;
@@ -150,6 +158,10 @@ export function useCanvasInteractions(
       if (hoveredNodeIdRef.current !== nodeId) {
         hoveredNodeIdRef.current = nodeId;
         scheduleRender();
+        setHoveredNodeId(nodeId);
+        setHoveredPosition(nodeId ? { x: e.clientX, y: e.clientY } : null);
+      } else if (nodeId) {
+        setHoveredPosition({ x: e.clientX, y: e.clientY });
       }
       canvas!.style.cursor = nodeId ? 'pointer' : 'default';
     }
@@ -172,5 +184,5 @@ export function useCanvasInteractions(
     };
   }, [canvasRef, screenToCanvas, hoveredNodeIdRef, scheduleRender]);
 
-  return { dragBehavior };
+  return { dragBehavior, hoveredNodeId, hoveredPosition };
 }

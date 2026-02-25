@@ -1,6 +1,6 @@
 # Phase 2: Visual Encoding + Properties Panel + Dev Panel
 
-**Status**: not started
+**Status**: done
 **Spec refs**: [visual-encoding](../specs/visual-encoding.md), [properties-panel](../specs/properties-panel.md), [dev-panel](../specs/dev-panel.md)
 **Goal**: Correct visual encoding, editable properties, and dev-time experimentation tools.
 

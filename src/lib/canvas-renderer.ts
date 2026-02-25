@@ -35,12 +35,13 @@ export function render(
     selectedNodeId: string | null;
     selectedEdgeId: string | null;
     hoveredNodeId: string | null;
+    activeCohortId: string | null;
     width: number;
     height: number;
     transform: { x: number; y: number; k: number };
   }
 ): void {
-  const { selectedNodeId, selectedEdgeId, hoveredNodeId, width, height, transform } = options;
+  const { selectedNodeId, selectedEdgeId, hoveredNodeId, activeCohortId, width, height, transform } = options;
 
   // Build lookup maps once per frame
   const personMap = new Map<string, Person>();
@@ -107,6 +108,15 @@ export function render(
     const color = cohortId ? (cohortColorMap.get(cohortId) ?? DEFAULT_NODE_COLOR) : DEFAULT_NODE_COLOR;
     const isSelected = person.id === selectedNodeId;
     const isHovered = person.id === hoveredNodeId;
+
+    // Cohort highlight ring
+    if (activeCohortId && person.cohortIds.includes(activeCohortId)) {
+      ctx.beginPath();
+      ctx.arc(person.x, person.y, baseRadius + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
     // Selected glow ring
     if (isSelected) {
