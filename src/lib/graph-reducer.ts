@@ -19,6 +19,13 @@ export type GraphAction =
       type: "UPDATE_RELATIONSHIP";
       payload: { id: string } & Partial<Relationship>;
     }
+  | {
+      type: "ADD_PERSON_WITH_RELATIONSHIP";
+      payload: {
+        person: Omit<Person, "id">;
+        relationship: Omit<Relationship, "id" | "sourceId">;
+      };
+    }
   | { type: "ADD_COHORT"; payload: Omit<Cohort, "id"> }
   | { type: "SET_ACTIVE_COHORT"; payload: { id: string | null } };
 
@@ -130,6 +137,21 @@ export function graphReducer(
         relationships: state.relationships.map((r) =>
           r.id === id ? { ...r, ...updates } : r,
         ),
+      });
+    }
+
+    case "ADD_PERSON_WITH_RELATIONSHIP": {
+      const personId = crypto.randomUUID();
+      const person: Person = { ...action.payload.person, id: personId };
+      const relationship: Relationship = {
+        ...action.payload.relationship,
+        id: crypto.randomUUID(),
+        sourceId: personId,
+      };
+      return withTimestamp({
+        ...state,
+        persons: [...state.persons, person],
+        relationships: [...state.relationships, relationship],
       });
     }
 
