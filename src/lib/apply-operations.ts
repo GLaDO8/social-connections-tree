@@ -1,9 +1,17 @@
+import { DEFAULT_BOND_STRENGTHS } from "@/lib/graph-constants";
 import type { GraphAction } from "@/lib/graph-reducer";
+import { graphReducer } from "@/lib/graph-reducer";
 import {
 	DEFAULT_COHORT_COLORS,
 	getRelationshipCategory,
 } from "@/lib/graph-utils";
-import type { Cohort, Person, SocialGraph } from "@/types/graph";
+import type {
+	BondStrength,
+	Cohort,
+	Person,
+	RelationshipType,
+	SocialGraph,
+} from "@/types/graph";
 import type { GraphOperation } from "@/types/operations";
 
 /**
@@ -27,6 +35,75 @@ function findCohortByName(
 	const normalized = name.trim().toLowerCase();
 	return cohorts.find((c) => c.name.toLowerCase() === normalized);
 }
+
+// ---------------------------------------------------------------------------
+// Cohort completion helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Infer a relationship type from a cohort name using keyword patterns.
+ */
+function inferRelationshipTypeFromCohort(cohortName: string): RelationshipType {
+	const name = cohortName.toLowerCase();
+	if (/college|school|class|university|batch/i.test(name)) return "classmate";
+	if (/work|office|company|team/i.test(name)) return "colleague";
+	if (/family/i.test(name)) return "family";
+	if (/room/i.test(name)) return "roommate";
+	return "friend";
+}
+
+/**
+ * Generate ADD_RELATIONSHIP actions for all missing pairs within a cohort,
+ * forming a complete subgraph among cohort members.
+ */
+export function generateCohortCompletionActions(
+	cohortId: string,
+	state: SocialGraph,
+): GraphAction[] {
+	const members = state.persons.filter((p) => p.cohortIds.includes(cohortId));
+	if (members.length < 2) return [];
+
+	const cohort = state.cohorts.find((c) => c.id === cohortId);
+	const cohortName = cohort?.name ?? "";
+	const relType = inferRelationshipTypeFromCohort(cohortName);
+	const bondStrength: BondStrength = DEFAULT_BOND_STRENGTHS[relType];
+	const category = getRelationshipCategory(relType);
+	const label = cohortName.toLowerCase();
+
+	const actions: GraphAction[] = [];
+
+	for (let i = 0; i < members.length; i++) {
+		for (let j = i + 1; j < members.length; j++) {
+			const a = members[i];
+			const b = members[j];
+			// Check if relationship already exists
+			const exists = state.relationships.some(
+				(r) =>
+					(r.sourceId === a.id && r.targetId === b.id) ||
+					(r.sourceId === b.id && r.targetId === a.id),
+			);
+			if (!exists) {
+				actions.push({
+					type: "ADD_RELATIONSHIP",
+					payload: {
+						sourceId: a.id,
+						targetId: b.id,
+						type: relType,
+						category,
+						label,
+						bondStrength,
+					},
+				});
+			}
+		}
+	}
+
+	return actions;
+}
+
+// ---------------------------------------------------------------------------
+// Main resolver
+// ---------------------------------------------------------------------------
 
 /**
  * Resolve a list of graph operations (from NL parse) into reducer actions.
@@ -65,6 +142,9 @@ export function resolveOperations(
 		}
 	}
 
+	// Track which cohorts gained new members (for completion pass)
+	const affectedCohortIds = new Set<string>();
+
 	for (const op of operations) {
 		switch (op.op) {
 			case "add_cohort": {
@@ -101,6 +181,7 @@ export function resolveOperations(
 									cohortIds: [...existing.cohortIds, ...newCohortIds],
 								},
 							});
+							for (const cid of newCohortIds) affectedCohortIds.add(cid);
 						}
 					}
 					break;
@@ -117,6 +198,7 @@ export function resolveOperations(
 						isEgo: false,
 					},
 				});
+				for (const cid of cohortIds) affectedCohortIds.add(cid);
 				break;
 			}
 
@@ -166,6 +248,7 @@ export function resolveOperations(
 						category: getRelationshipCategory(op.data.type),
 						label: op.data.label,
 						bondStrength: op.data.bondStrength,
+						...(op.data.notes && { notes: op.data.notes }),
 					},
 				});
 				break;
@@ -205,6 +288,8 @@ export function resolveOperations(
 				if (op.data.updates.label) updates.label = op.data.updates.label;
 				if (op.data.updates.bondStrength)
 					updates.bondStrength = op.data.updates.bondStrength;
+				if (op.data.updates.notes !== undefined)
+					updates.notes = op.data.updates.notes;
 				act({
 					type: "UPDATE_RELATIONSHIP",
 					payload: { id: rel.id, ...updates },
@@ -237,6 +322,29 @@ export function resolveOperations(
 				if (!rel) break;
 				act({ type: "REMOVE_RELATIONSHIP", payload: { id: rel.id } });
 				break;
+			}
+		}
+	}
+
+	// -----------------------------------------------------------------------
+	// Cohort completion pass: auto-connect all members within affected cohorts
+	// -----------------------------------------------------------------------
+	if (affectedCohortIds.size > 0) {
+		// Build post-operation state by applying all actions so far
+		let postOpState = state;
+		for (const action of actions) {
+			postOpState = graphReducer(postOpState, action);
+		}
+
+		for (const cohortId of affectedCohortIds) {
+			const completionActions = generateCohortCompletionActions(
+				cohortId,
+				postOpState,
+			);
+			for (const ca of completionActions) {
+				actions.push(ca);
+				// Update postOpState so subsequent cohort completions see these edges
+				postOpState = graphReducer(postOpState, ca);
 			}
 		}
 	}

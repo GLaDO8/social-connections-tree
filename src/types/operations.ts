@@ -10,6 +10,7 @@ export type GraphOperation =
 				type: RelationshipType;
 				label: string;
 				bondStrength: BondStrength;
+				notes?: string;
 			};
 	  }
 	| { op: "add_cohort"; data: { name: string } }
@@ -26,6 +27,7 @@ export type GraphOperation =
 					type?: RelationshipType;
 					label?: string;
 					bondStrength?: BondStrength;
+					notes?: string;
 				};
 			};
 	  }

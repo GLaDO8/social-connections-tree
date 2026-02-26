@@ -18,7 +18,9 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useGraph } from "@/context/GraphContext";
+import { generateCohortCompletionActions } from "@/lib/apply-operations";
 import { BOND_LABELS, RELATIONSHIP_TYPES } from "@/lib/graph-constants";
+import { graphReducer } from "@/lib/graph-reducer";
 import { getRelationshipCategory } from "@/lib/graph-utils";
 import type { BondStrength, RelationshipType } from "@/types/graph";
 
@@ -30,6 +32,7 @@ function NodePanel() {
 	const {
 		state,
 		dispatch,
+		batchDispatch,
 		selectedNodeId,
 		setSelectedNodeId,
 		setSelectedEdgeId,
@@ -85,13 +88,24 @@ function NodePanel() {
 	}
 
 	function addCohort(cohortId: string) {
-		dispatch({
-			type: "UPDATE_PERSON",
+		// Build the update action
+		const updateAction = {
+			type: "UPDATE_PERSON" as const,
 			payload: {
 				id: person.id,
 				cohortIds: [...person.cohortIds, cohortId],
 			},
-		});
+		};
+
+		// Compute post-update state to generate completion edges
+		const updatedState = graphReducer(state, updateAction);
+		const completionActions = generateCohortCompletionActions(
+			cohortId,
+			updatedState,
+		);
+
+		// Batch: update person + all completion edges = one undo entry
+		batchDispatch([updateAction, ...completionActions]);
 	}
 
 	function removeCohort(cohortId: string) {
@@ -289,10 +303,12 @@ function EdgePanel() {
 	);
 
 	const [label, setLabel] = useState("");
+	const [edgeNotes, setEdgeNotes] = useState("");
 
 	useEffect(() => {
 		if (maybeRelationship) {
 			setLabel(maybeRelationship.label);
+			setEdgeNotes(maybeRelationship.notes ?? "");
 		}
 	}, [maybeRelationship]);
 
@@ -312,6 +328,15 @@ function EdgePanel() {
 			dispatch({
 				type: "UPDATE_RELATIONSHIP",
 				payload: { id: relationship.id, label: trimmed },
+			});
+		}
+	}
+
+	function commitEdgeNotes() {
+		if (edgeNotes !== (relationship.notes ?? "")) {
+			dispatch({
+				type: "UPDATE_RELATIONSHIP",
+				payload: { id: relationship.id, notes: edgeNotes || undefined },
 			});
 		}
 	}
@@ -429,6 +454,22 @@ function EdgePanel() {
 					<span className="text-[10px] text-muted-foreground">4</span>
 					<span className="text-[10px] text-muted-foreground">5</span>
 				</div>
+			</div>
+
+			{/* Notes */}
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<Label className="text-xs text-muted-foreground mb-1.5 block">
+					Notes
+				</Label>
+				<Textarea
+					value={edgeNotes}
+					onChange={(e) => setEdgeNotes(e.target.value)}
+					onBlur={commitEdgeNotes}
+					placeholder="Add backstory or context..."
+					className="text-sm bg-muted border-border text-foreground min-h-[60px] resize-none"
+					rows={3}
+				/>
 			</div>
 
 			{/* Delete */}

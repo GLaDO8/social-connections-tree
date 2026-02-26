@@ -34,7 +34,9 @@ INFERENCE:
 - "brother" / "sister" → sibling, bondStrength 4
 - Default: friend, bondStrength 3
 
-LABEL: Write a short natural phrase for the edge label (e.g., "childhood friend from FIITJEE", "college roommate").`;
+LABEL: Write a short natural phrase for the edge label (e.g., "childhood friend from FIITJEE", "college roommate").
+
+NOTES: If the user mentions context about HOW/WHEN people met, anecdotes, or backstory about a relationship, capture it in the notes field. Label is a SHORT descriptor ("college roommate"). Notes capture richer detail ("Met during freshman orientation in 2018, lived in the same dorm"). Only populate when the user provides such context — don't fabricate.`;
 
 /**
  * Build the full system prompt with current graph state injected.

@@ -56,6 +56,7 @@ const GraphOperationSchema = z.discriminatedUnion("op", [
 			type: RelationshipTypeEnum,
 			label: z.string(),
 			bondStrength: BondStrengthEnum,
+			notes: z.string().optional(),
 		}),
 	}),
 	z.object({
@@ -81,6 +82,7 @@ const GraphOperationSchema = z.discriminatedUnion("op", [
 				type: RelationshipTypeEnum.optional(),
 				label: z.string().optional(),
 				bondStrength: BondStrengthEnum.optional(),
+				notes: z.string().optional(),
 			}),
 		}),
 	}),
@@ -176,6 +178,11 @@ const tools: Anthropic.Tool[] = [
 					minimum: 1,
 					maximum: 5,
 				},
+				notes: {
+					type: "string",
+					description:
+						"Contextual details or backstory about the relationship (how/when they met, anecdotes). Only populate when user provides such context.",
+				},
 			},
 			required: ["sourceName", "targetName", "type", "label", "bondStrength"],
 		},
@@ -229,6 +236,11 @@ const tools: Anthropic.Tool[] = [
 					description: "New bond strength (1-5)",
 					minimum: 1,
 					maximum: 5,
+				},
+				notes: {
+					type: "string",
+					description:
+						"New contextual details or backstory about the relationship.",
 				},
 			},
 			required: ["sourceName", "targetName"],
@@ -295,6 +307,7 @@ function toolCallToOperation(toolName: string, input: ToolInput): any {
 					type: input.type!,
 					label: input.label!,
 					bondStrength: input.bondStrength!,
+					...(input.notes && { notes: input.notes }),
 				},
 			};
 		case "add_cohort":
@@ -313,10 +326,12 @@ function toolCallToOperation(toolName: string, input: ToolInput): any {
 				type?: string;
 				label?: string;
 				bondStrength?: number;
+				notes?: string;
 			} = {};
 			if (input.type) updates.type = input.type;
 			if (input.label) updates.label = input.label;
 			if (input.bondStrength) updates.bondStrength = input.bondStrength;
+			if (input.notes !== undefined) updates.notes = input.notes;
 			return {
 				op: "update_relationship",
 				data: {
