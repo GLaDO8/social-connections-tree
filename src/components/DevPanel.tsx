@@ -1,57 +1,26 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
+import { useDialKit } from "dialkit";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ForceSimulation, LinkDatum } from "@/lib/force-config";
-import { NODE_RADIUS } from "@/lib/graph-constants";
-
-interface DevPanelProps {
-	open: boolean;
-	onClose: () => void;
-	simulationRef: React.RefObject<React.RefObject<ForceSimulation | null> | null>;
-}
-
-interface DevSettings {
-	repulsion: number;
-	linkDistanceMultiplier: number;
-	alphaDecay: number;
-	collisionPadding: number;
-}
-
-const DEFAULTS: DevSettings = {
-	repulsion: -400,
-	linkDistanceMultiplier: 1,
-	alphaDecay: 0.02,
-	collisionPadding: 10,
-};
+import { DEV_SETTINGS_DEFAULTS, type DevSettings } from "@/types/dev-settings";
 
 const STORAGE_KEY = "sct-dev-settings";
 
-function loadSettings(): DevSettings {
-	if (typeof window === "undefined") return DEFAULTS;
+function loadPersistedSettings(): DevSettings {
+	if (typeof window === "undefined") return DEV_SETTINGS_DEFAULTS;
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (raw) {
 			const parsed = JSON.parse(raw);
 			if (typeof parsed === "object" && parsed !== null) {
-				return { ...DEFAULTS, ...parsed };
+				return { ...DEV_SETTINGS_DEFAULTS, ...parsed };
 			}
 		}
 	} catch {
 		// ignore
 	}
-	return DEFAULTS;
+	return DEV_SETTINGS_DEFAULTS;
 }
 
 function saveSettings(settings: DevSettings) {
@@ -62,211 +31,297 @@ function saveSettings(settings: DevSettings) {
 	}
 }
 
-export default function DevPanel({
-	open,
-	onClose,
-	simulationRef,
-}: DevPanelProps) {
-	const [settings, setSettings] = useState<DevSettings>(DEFAULTS);
-	const [mounted, setMounted] = useState(false);
+interface DevPanelProps {
+	simulationRef: React.RefObject<React.RefObject<ForceSimulation | null> | null>;
+	onSettingsRef?: (ref: React.MutableRefObject<DevSettings>) => void;
+}
 
-	// Load saved settings on mount
+interface DevPanelInnerProps extends DevPanelProps {
+	onReset: () => void;
+}
+
+function DevPanelInner({
+	simulationRef,
+	onSettingsRef,
+	onReset,
+}: DevPanelInnerProps) {
+	const persisted = useRef(loadPersistedSettings()).current;
+	const settingsRef = useRef<DevSettings>({ ...persisted });
+
+	// Expose settings ref to parent on mount
 	useEffect(() => {
-		const saved = loadSettings();
-		setSettings(saved);
-		setMounted(true);
+		onSettingsRef?.(settingsRef);
+	}, [onSettingsRef]);
+
+	const d = persisted;
+
+	const p = useDialKit(
+		"Dev Controls",
+		{
+			physics: {
+				repulsion: [d.repulsion, -1000, -100, 10] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				linkDistanceMultiplier: [d.linkDistanceMultiplier, 0.5, 3, 0.1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				alphaDecay: [d.alphaDecay, 0.005, 0.1, 0.005] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				collisionPadding: [d.collisionPadding, 0, 30, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				velocityDecay: [d.velocityDecay, 0.1, 0.9, 0.05] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				centerStrength: [d.centerStrength, 0, 2, 0.1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+			},
+			nodes: {
+				_collapsed: true,
+				nodeRadius: [d.nodeRadius, 5, 30, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				egoRadius: [d.egoRadius, 8, 40, 1] as [number, number, number, number],
+				defaultNodeColor: d.defaultNodeColor,
+				nodeBorderWidth: [d.nodeBorderWidth, 0, 4, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				nodeBorderColor: d.nodeBorderColor,
+				hoverExpand: [d.hoverExpand, 0, 8, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				selectedGlowOffset: [d.selectedGlowOffset, 2, 12, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				selectedGlowOpacity: [d.selectedGlowOpacity, 0, 1, 0.05] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				cohortRingOffset: [d.cohortRingOffset, 1, 10, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				cohortRingWidth: [d.cohortRingWidth, 1, 5, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+			},
+			bondMapping: {
+				bondToDistance: d.bondToDistance,
+				bondToThickness: d.bondToThickness,
+			},
+			edges: {
+				_collapsed: true,
+				edgeWidth: [d.edgeWidth, 0.5, 5, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				edgeWidthMin: [d.edgeWidthMin, 0.5, 5, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				edgeWidthMax: [d.edgeWidthMax, 1, 8, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				selectedEdgeWidth: [d.selectedEdgeWidth, 1, 8, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				edgeColorDefault: d.edgeColorDefault,
+				edgeColorRomantic: d.edgeColorRomantic,
+				edgeColorFamily: d.edgeColorFamily,
+				edgeColorProfessional: d.edgeColorProfessional,
+			},
+			labels: {
+				_collapsed: true,
+				labelColor: d.labelColor,
+				labelSize: [d.labelSize, 8, 18, 1] as [number, number, number, number],
+				labelOffset: [d.labelOffset, 0, 12, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				showLabels: d.showLabels,
+			},
+			canvas: {
+				_collapsed: true,
+				canvasBgColor: d.canvasBgColor,
+			},
+			reset: { type: "action" as const, label: "Reset" },
+			reheat: { type: "action" as const, label: "Reheat" },
+		},
+		{
+			onAction: (action: string) => {
+				if (action === "reset") {
+					localStorage.removeItem(STORAGE_KEY);
+					onReset();
+				}
+				if (action === "reheat") {
+					const sim = simulationRef.current?.current;
+					if (sim) sim.alpha(0.3).restart();
+				}
+			},
+		},
+	);
+
+	// Sync DialKit proxy values → settingsRef + localStorage + physics
+	useEffect(() => {
+		const next: DevSettings = {
+			// Physics
+			repulsion: p.physics.repulsion,
+			linkDistanceMultiplier: p.physics.linkDistanceMultiplier,
+			alphaDecay: p.physics.alphaDecay,
+			collisionPadding: p.physics.collisionPadding,
+			velocityDecay: p.physics.velocityDecay,
+			centerStrength: p.physics.centerStrength,
+			// Bond mapping
+			bondToDistance: p.bondMapping.bondToDistance,
+			bondToThickness: p.bondMapping.bondToThickness,
+			// Nodes
+			nodeRadius: p.nodes.nodeRadius,
+			egoRadius: p.nodes.egoRadius,
+			defaultNodeColor: p.nodes.defaultNodeColor,
+			nodeBorderWidth: p.nodes.nodeBorderWidth,
+			nodeBorderColor: p.nodes.nodeBorderColor,
+			hoverExpand: p.nodes.hoverExpand,
+			selectedGlowOffset: p.nodes.selectedGlowOffset,
+			selectedGlowOpacity: p.nodes.selectedGlowOpacity,
+			cohortRingOffset: p.nodes.cohortRingOffset,
+			cohortRingWidth: p.nodes.cohortRingWidth,
+			// Edges
+			edgeWidth: p.edges.edgeWidth,
+			edgeWidthMin: p.edges.edgeWidthMin,
+			edgeWidthMax: p.edges.edgeWidthMax,
+			selectedEdgeWidth: p.edges.selectedEdgeWidth,
+			edgeColorDefault: p.edges.edgeColorDefault,
+			edgeColorRomantic: p.edges.edgeColorRomantic,
+			edgeColorFamily: p.edges.edgeColorFamily,
+			edgeColorProfessional: p.edges.edgeColorProfessional,
+			// Labels
+			labelColor: p.labels.labelColor,
+			labelSize: p.labels.labelSize,
+			labelOffset: p.labels.labelOffset,
+			showLabels: p.labels.showLabels,
+			// Canvas
+			canvasBgColor: p.canvas.canvasBgColor,
+		};
+
+		settingsRef.current = next;
+		saveSettings(next);
+
+		// Apply physics to simulation
+		const sim = simulationRef.current?.current;
+		if (!sim) return;
+
+		const charge = sim.force("charge");
+		if (charge && "strength" in charge) {
+			(charge as { strength: (v: number) => void }).strength(next.repulsion);
+		}
+
+		const link = sim.force("link");
+		if (link && "distance" in link) {
+			(link as { distance: (fn: (d: LinkDatum) => number) => void }).distance(
+				(ld: LinkDatum) =>
+					next.bondToDistance
+						? (300 - ld.bondStrength * 50) * next.linkDistanceMultiplier
+						: 150 * next.linkDistanceMultiplier,
+			);
+		}
+
+		sim.alphaDecay(next.alphaDecay);
+		sim.velocityDecay(next.velocityDecay);
+
+		const collide = sim.force("collide");
+		if (collide && "radius" in collide) {
+			(collide as { radius: (v: number) => void }).radius(
+				next.collisionPadding + next.nodeRadius,
+			);
+		}
+
+		const center = sim.force("center");
+		if (center && "strength" in center) {
+			(center as { strength: (v: number) => void }).strength(
+				next.centerStrength,
+			);
+		}
+
+		sim.alpha(0.3).restart();
+	});
+
+	return null;
+}
+
+export default function DevPanel({
+	simulationRef,
+	onSettingsRef,
+}: DevPanelProps) {
+	const [resetKey, setResetKey] = useState(0);
+
+	const onSettingsRefStable = useCallback(
+		(ref: React.MutableRefObject<DevSettings>) => {
+			onSettingsRef?.(ref);
+		},
+		[onSettingsRef],
+	);
+
+	const handleReset = useCallback(() => {
+		setResetKey((k) => k + 1);
 	}, []);
 
-	// Resolve the simulation from the ref-of-ref (page.tsx → GraphCanvas → useForceSimulation)
-	function getSimulation(): ForceSimulation | null {
-		return simulationRef.current?.current ?? null;
-	}
-
-	// Apply settings to simulation whenever they change (after mount)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: getSimulation reads from stable ref
-	const applyToSimulation = useCallback(
-		(s: DevSettings) => {
-			const sim = getSimulation();
-			if (!sim) return;
-
-			const charge = sim.force("charge");
-			if (charge && "strength" in charge) {
-				(charge as { strength: (v: number) => void }).strength(s.repulsion);
-			}
-
-			const link = sim.force("link");
-			if (link && "distance" in link) {
-				(link as { distance: (fn: (d: LinkDatum) => number) => void }).distance(
-					(d: LinkDatum) =>
-						(300 - d.bondStrength * 50) * s.linkDistanceMultiplier,
-				);
-			}
-
-			sim.alphaDecay(s.alphaDecay);
-
-			const collide = sim.force("collide");
-			if (collide && "radius" in collide) {
-				(collide as { radius: (v: number) => void }).radius(
-					s.collisionPadding + NODE_RADIUS,
-				);
-			}
-
-			sim.alpha(0.3).restart();
-		},
-		[simulationRef],
-	);
-
-	// Apply loaded settings to simulation once mounted (with delay for simulation init)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only runs when mounted flips
-	useEffect(() => {
-		if (mounted) {
-			const timer = setTimeout(() => applyToSimulation(settings), 100);
-			return () => clearTimeout(timer);
-		}
-	}, [mounted]);
-
-	const updateSetting = useCallback(
-		<K extends keyof DevSettings>(key: K, value: DevSettings[K]) => {
-			setSettings((prev) => {
-				const next = { ...prev, [key]: value };
-				saveSettings(next);
-				applyToSimulation(next);
-				return next;
-			});
-		},
-		[applyToSimulation],
-	);
-
-	const resetToDefaults = useCallback(() => {
-		setSettings(DEFAULTS);
-		saveSettings(DEFAULTS);
-		applyToSimulation(DEFAULTS);
-	}, [applyToSimulation]);
-
 	return (
-		<Sheet
-			open={open}
-			onOpenChange={(v) => {
-				if (!v) onClose();
-			}}
-			modal={false}
-		>
-			<SheetContent
-				side="left"
-				className="w-72 sm:max-w-72 gap-0 p-0"
-				showCloseButton={false}
-			>
-				<SheetHeader className="px-4 pt-4 pb-2">
-					<div className="flex items-center justify-between">
-						<SheetTitle className="text-sm tracking-wide uppercase text-muted-foreground">
-							Dev Panel
-						</SheetTitle>
-						<button
-							type="button"
-							onClick={onClose}
-							className="text-muted-foreground hover:text-foreground transition-colors"
-						>
-							<X className="h-4 w-4" />
-						</button>
-					</div>
-					<SheetDescription className="sr-only">
-						Adjust physics simulation parameters
-					</SheetDescription>
-				</SheetHeader>
-
-				<Separator />
-
-				{/* Controls */}
-				<div className="px-4 pb-4 pt-4 space-y-5">
-					{/* Repulsion Strength */}
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<Label className="text-xs text-muted-foreground">
-								Repulsion strength
-							</Label>
-							<span className="text-xs font-mono text-muted-foreground">
-								{settings.repulsion}
-							</span>
-						</div>
-						<Slider
-							value={[settings.repulsion]}
-							onValueChange={([v]) => updateSetting("repulsion", v)}
-							min={-1000}
-							max={-100}
-							step={10}
-						/>
-					</div>
-
-					{/* Link Distance Multiplier */}
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<Label className="text-xs text-muted-foreground">
-								Link distance mult.
-							</Label>
-							<span className="text-xs font-mono text-muted-foreground">
-								{settings.linkDistanceMultiplier.toFixed(1)}
-							</span>
-						</div>
-						<Slider
-							value={[settings.linkDistanceMultiplier]}
-							onValueChange={([v]) =>
-								updateSetting("linkDistanceMultiplier", v)
-							}
-							min={0.5}
-							max={3}
-							step={0.1}
-						/>
-					</div>
-
-					{/* Alpha Decay */}
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<Label className="text-xs text-muted-foreground">
-								Alpha decay
-							</Label>
-							<span className="text-xs font-mono text-muted-foreground">
-								{settings.alphaDecay.toFixed(3)}
-							</span>
-						</div>
-						<Slider
-							value={[settings.alphaDecay]}
-							onValueChange={([v]) => updateSetting("alphaDecay", v)}
-							min={0.005}
-							max={0.1}
-							step={0.005}
-						/>
-					</div>
-
-					{/* Collision Padding */}
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<Label className="text-xs text-muted-foreground">
-								Collision padding
-							</Label>
-							<span className="text-xs font-mono text-muted-foreground">
-								{settings.collisionPadding}
-							</span>
-						</div>
-						<Slider
-							value={[settings.collisionPadding]}
-							onValueChange={([v]) => updateSetting("collisionPadding", v)}
-							min={0}
-							max={30}
-							step={1}
-						/>
-					</div>
-
-					{/* Reset */}
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={resetToDefaults}
-						className="w-full text-xs border-border text-muted-foreground hover:bg-accent hover:text-foreground"
-					>
-						Reset to defaults
-					</Button>
-				</div>
-			</SheetContent>
-		</Sheet>
+		<DevPanelInner
+			key={resetKey}
+			simulationRef={simulationRef}
+			onSettingsRef={onSettingsRefStable}
+			onReset={handleReset}
+		/>
 	);
 }

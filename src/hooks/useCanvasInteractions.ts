@@ -3,6 +3,7 @@
 import { type DragBehavior, drag as d3Drag } from "d3-drag";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hitTestEdge, hitTestNode } from "@/lib/hit-testing";
+import type { DevSettings } from "@/types/dev-settings";
 import type { Person, Relationship } from "@/types/graph";
 
 const DRAG_THRESHOLD = 5;
@@ -24,6 +25,7 @@ export function useCanvasInteractions(
 		onSelectNode: (id: string | null) => void;
 		onSelectEdge: (id: string | null) => void;
 	},
+	devSettingsRef?: React.RefObject<React.MutableRefObject<DevSettings> | null>,
 ): {
 	dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown>;
 	hoveredNodeId: string | null;
@@ -43,6 +45,10 @@ export function useCanvasInteractions(
 	relationshipsRef.current = relationships;
 	const callbacksRef = useRef(callbacks);
 	callbacksRef.current = callbacks;
+
+	// Stable ref to devSettingsRef — avoids stale closure in useMemo/useEffect
+	const devSettingsRefRef = useRef(devSettingsRef);
+	devSettingsRefRef.current = devSettingsRef;
 
 	// Track drag state across d3-drag events.
 	const dragSubjectRef = useRef<Person | null>(null);
@@ -71,7 +77,14 @@ export function useCanvasInteractions(
 				const sourceEvent = event.sourceEvent;
 				if (!(sourceEvent instanceof MouseEvent)) return undefined;
 				const pos = screenToCanvas(sourceEvent);
-				const hit = hitTestNode(personsRef.current, pos.x, pos.y);
+				const ds = devSettingsRefRef.current?.current?.current;
+				const hit = hitTestNode(
+					personsRef.current,
+					pos.x,
+					pos.y,
+					ds?.nodeRadius,
+					ds?.egoRadius,
+				);
 				return hit ?? undefined;
 			})
 			.on("start", (event) => {
@@ -131,7 +144,14 @@ export function useCanvasInteractions(
 
 		function handleClick(e: MouseEvent) {
 			const pos = screenToCanvas(e);
-			const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
+			const ds = devSettingsRefRef.current?.current?.current;
+			const hitNode = hitTestNode(
+				personsRef.current,
+				pos.x,
+				pos.y,
+				ds?.nodeRadius,
+				ds?.egoRadius,
+			);
 
 			if (hitNode) {
 				callbacksRef.current.onSelectNode(hitNode.id);
@@ -159,7 +179,14 @@ export function useCanvasInteractions(
 		function handleMouseMove(e: MouseEvent) {
 			if (e.target !== canvas) return;
 			const pos = screenToCanvas(e);
-			const hitNode = hitTestNode(personsRef.current, pos.x, pos.y);
+			const ds = devSettingsRefRef.current?.current?.current;
+			const hitNode = hitTestNode(
+				personsRef.current,
+				pos.x,
+				pos.y,
+				ds?.nodeRadius,
+				ds?.egoRadius,
+			);
 			const nodeId = hitNode?.id ?? null;
 			if (hoveredNodeIdRef.current !== nodeId) {
 				hoveredNodeIdRef.current = nodeId;

@@ -11,9 +11,11 @@ import { useForceSimulation } from "@/hooks/useForceSimulation";
 import { render } from "@/lib/canvas-renderer";
 import type { ForceSimulation } from "@/lib/force-config";
 import { hitTestEdge, hitTestNode } from "@/lib/hit-testing";
+import type { DevSettings } from "@/types/dev-settings";
 
 interface GraphCanvasProps {
 	onSimulationReady?: (ref: React.RefObject<ForceSimulation | null>) => void;
+	devSettingsRef?: React.RefObject<React.MutableRefObject<DevSettings> | null>;
 }
 
 interface ContextMenuState {
@@ -25,6 +27,7 @@ interface ContextMenuState {
 
 export default function GraphCanvas({
 	onSimulationReady,
+	devSettingsRef,
 }: GraphCanvasProps = {}) {
 	const {
 		state,
@@ -57,6 +60,8 @@ export default function GraphCanvas({
 	const selectedEdgeIdRef = useRef(selectedEdgeId);
 	selectedEdgeIdRef.current = selectedEdgeId;
 	const hoveredNodeIdRef = useRef<string | null>(null);
+	const devSettingsRefRef = useRef(devSettingsRef);
+	devSettingsRefRef.current = devSettingsRef;
 
 	// Track canvas size
 	const [width, height] = useCanvasSize(canvasRef, sizeRef);
@@ -80,6 +85,8 @@ export default function GraphCanvas({
 				width: sizeRef.current.width,
 				height: sizeRef.current.height,
 				transform: transformRef.current,
+				visualSettings:
+					devSettingsRefRef.current?.current?.current ?? undefined,
 			});
 		});
 	}, []);
@@ -112,6 +119,7 @@ export default function GraphCanvas({
 				onSelectNode: setSelectedNodeId,
 				onSelectEdge: setSelectedEdgeId,
 			},
+			devSettingsRef,
 		);
 
 	// Re-render when React state changes (selection, graph data)
@@ -174,7 +182,14 @@ export default function GraphCanvas({
 			const cy = (e.clientY - rect.top - t.y) / t.k;
 
 			const s = stateRef.current;
-			const hitNode = hitTestNode(s.persons, cx, cy);
+			const ds = devSettingsRefRef.current?.current?.current;
+			const hitNode = hitTestNode(
+				s.persons,
+				cx,
+				cy,
+				ds?.nodeRadius,
+				ds?.egoRadius,
+			);
 			const hitEdge = hitNode
 				? null
 				: hitTestEdge(s.relationships, s.persons, cx, cy);

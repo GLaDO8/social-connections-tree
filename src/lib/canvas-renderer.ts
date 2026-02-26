@@ -1,3 +1,4 @@
+import type { DevSettings } from "@/types/dev-settings";
 import type {
 	Cohort,
 	Person,
@@ -6,16 +7,15 @@ import type {
 } from "@/types/graph";
 import { EGO_RADIUS, NODE_RADIUS } from "./graph-constants";
 
-const EDGE_COLORS: Record<RelationshipCategory, string> = {
+const FALLBACK_EDGE_COLORS: Record<RelationshipCategory, string> = {
 	default: "#999999",
 	romantic: "#FF69B4",
 	family: "#FFD700",
 	professional: "#4A90D9",
 };
 
-const DEFAULT_NODE_COLOR = "#6B7280";
-const LABEL_COLOR = "#D1D5DB";
-const LABEL_FONT = "11px sans-serif";
+const FALLBACK_DEFAULT_NODE_COLOR = "#6B7280";
+const FALLBACK_LABEL_COLOR = "#D1D5DB";
 
 const brightenCache = new Map<string, string>();
 
@@ -31,6 +31,11 @@ function brighten(hex: string): string {
 	return result;
 }
 
+function opacityToHexAlpha(opacity: number): string {
+	const alpha = Math.round(Math.max(0, Math.min(1, opacity)) * 255);
+	return alpha.toString(16).padStart(2, "0");
+}
+
 export function render(
 	ctx: CanvasRenderingContext2D,
 	persons: Person[],
@@ -44,6 +49,7 @@ export function render(
 		width: number;
 		height: number;
 		transform: { x: number; y: number; k: number };
+		visualSettings?: DevSettings;
 	},
 ): void {
 	const {
@@ -54,7 +60,39 @@ export function render(
 		width,
 		height,
 		transform,
+		visualSettings: vs,
 	} = options;
+
+	// Derive all visual params with fallbacks
+	const nodeRadius = vs?.nodeRadius ?? NODE_RADIUS;
+	const egoRadius = vs?.egoRadius ?? EGO_RADIUS;
+	const defaultNodeColor = vs?.defaultNodeColor ?? FALLBACK_DEFAULT_NODE_COLOR;
+	const nodeBorderWidth = vs?.nodeBorderWidth ?? 0;
+	const nodeBorderColor = vs?.nodeBorderColor ?? "#FFFFFF";
+	const hoverExpand = vs?.hoverExpand ?? 3;
+	const selectedGlowOffset = vs?.selectedGlowOffset ?? 6;
+	const selectedGlowOpacity = vs?.selectedGlowOpacity ?? 0.25;
+	const cohortRingOffset = vs?.cohortRingOffset ?? 4;
+	const cohortRingWidth = vs?.cohortRingWidth ?? 2;
+	const edgeWidth = vs?.edgeWidth ?? 1;
+	const edgeWidthMin = vs?.edgeWidthMin ?? 0.5;
+	const edgeWidthMax = vs?.edgeWidthMax ?? 4;
+	const bondToThickness = vs?.bondToThickness ?? false;
+	const selectedEdgeWidth = vs?.selectedEdgeWidth ?? 3;
+	const labelColor = vs?.labelColor ?? FALLBACK_LABEL_COLOR;
+	const labelSize = vs?.labelSize ?? 11;
+	const labelOffset = vs?.labelOffset ?? 4;
+	const showLabels = vs?.showLabels ?? true;
+	const canvasBgColor = vs?.canvasBgColor ?? null;
+
+	const edgeColors: Record<RelationshipCategory, string> = vs
+		? {
+				default: vs.edgeColorDefault,
+				romantic: vs.edgeColorRomantic,
+				family: vs.edgeColorFamily,
+				professional: vs.edgeColorProfessional,
+			}
+		: FALLBACK_EDGE_COLORS;
 
 	// Build lookup maps once per frame
 	const personMap = new Map<string, Person>();
@@ -67,8 +105,13 @@ export function render(
 		cohortColorMap.set(c.id, c.color);
 	}
 
-	// 1. Clear canvas
-	ctx.clearRect(0, 0, width, height);
+	// 1. Clear / fill canvas background
+	if (canvasBgColor) {
+		ctx.fillStyle = canvasBgColor;
+		ctx.fillRect(0, 0, width, height);
+	} else {
+		ctx.clearRect(0, 0, width, height);
+	}
 
 	// 2. Save context and apply zoom transform
 	ctx.save();
@@ -93,9 +136,19 @@ export function render(
 		)
 			continue;
 
-		const color = EDGE_COLORS[rel.category] ?? EDGE_COLORS.default;
-		const lineWidth = rel.id === selectedEdgeId ? 3 : 1;
-		const key = `${color}:${lineWidth}`;
+		const color = edgeColors[rel.category] ?? edgeColors.default;
+		let lw: number;
+		if (rel.id === selectedEdgeId) {
+			lw = selectedEdgeWidth;
+		} else if (bondToThickness) {
+			// Map bondStrength 1-5 → edgeWidthMin-edgeWidthMax
+			lw =
+				edgeWidthMin +
+				((rel.bondStrength - 1) / 4) * (edgeWidthMax - edgeWidthMin);
+		} else {
+			lw = edgeWidth;
+		}
+		const key = `${color}:${lw}`;
 
 		let batch = edgeBatches.get(key);
 		if (!batch) {
@@ -118,48 +171,70 @@ export function render(
 	}
 
 	// 4. Draw nodes
-	ctx.font = LABEL_FONT;
+	const labelFont = `${labelSize}px sans-serif`;
+	ctx.font = labelFont;
 	ctx.textAlign = "center";
 	ctx.textBaseline = "top";
 
 	for (const person of persons) {
 		if (person.x == null || person.y == null) continue;
 
-		const baseRadius = person.isEgo ? EGO_RADIUS : NODE_RADIUS;
+		const baseRadius = person.isEgo ? egoRadius : nodeRadius;
 		const cohortId = person.cohortIds[0];
 		const color = cohortId
-			? (cohortColorMap.get(cohortId) ?? DEFAULT_NODE_COLOR)
-			: DEFAULT_NODE_COLOR;
+			? (cohortColorMap.get(cohortId) ?? defaultNodeColor)
+			: defaultNodeColor;
 		const isSelected = person.id === selectedNodeId;
 		const isHovered = person.id === hoveredNodeId;
 
 		// Cohort highlight ring
 		if (activeCohortId && person.cohortIds.includes(activeCohortId)) {
 			ctx.beginPath();
-			ctx.arc(person.x, person.y, baseRadius + 4, 0, Math.PI * 2);
+			ctx.arc(
+				person.x,
+				person.y,
+				baseRadius + cohortRingOffset,
+				0,
+				Math.PI * 2,
+			);
 			ctx.strokeStyle = color;
-			ctx.lineWidth = 2;
+			ctx.lineWidth = cohortRingWidth;
 			ctx.stroke();
 		}
 
 		// Selected glow ring
 		if (isSelected) {
 			ctx.beginPath();
-			ctx.arc(person.x, person.y, baseRadius + 6, 0, Math.PI * 2);
-			ctx.fillStyle = `${color}40`;
+			ctx.arc(
+				person.x,
+				person.y,
+				baseRadius + selectedGlowOffset,
+				0,
+				Math.PI * 2,
+			);
+			ctx.fillStyle = `${color}${opacityToHexAlpha(selectedGlowOpacity)}`;
 			ctx.fill();
 		}
 
 		// Node circle
-		const drawRadius = isHovered ? baseRadius + 3 : baseRadius;
+		const drawRadius = isHovered ? baseRadius + hoverExpand : baseRadius;
 		ctx.beginPath();
 		ctx.arc(person.x, person.y, drawRadius, 0, Math.PI * 2);
 		ctx.fillStyle = isHovered ? brighten(color) : color;
 		ctx.fill();
 
+		// Node border
+		if (nodeBorderWidth > 0) {
+			ctx.strokeStyle = nodeBorderColor;
+			ctx.lineWidth = nodeBorderWidth;
+			ctx.stroke();
+		}
+
 		// Label
-		ctx.fillStyle = LABEL_COLOR;
-		ctx.fillText(person.name, person.x, person.y + drawRadius + 4);
+		if (showLabels) {
+			ctx.fillStyle = labelColor;
+			ctx.fillText(person.name, person.x, person.y + drawRadius + labelOffset);
+		}
 	}
 
 	// 5. Restore context
