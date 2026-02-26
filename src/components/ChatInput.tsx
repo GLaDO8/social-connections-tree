@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
@@ -130,7 +131,7 @@ export default function ChatInput() {
 
 	return (
 		<div
-			className="fixed bottom-0 left-0 right-0 z-50 flex flex-col border-t border-gray-800 bg-gray-900/95 backdrop-blur"
+			className="fixed bottom-0 left-0 right-0 z-50 flex flex-col border-t border-border bg-background/95 backdrop-blur"
 			style={{ maxHeight: collapsed ? "auto" : "40vh" }}
 		>
 			{/* Top bar: collapse toggle + mode tabs */}
@@ -141,8 +142,8 @@ export default function ChatInput() {
 						onClick={() => setMode("chat")}
 						className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] transition-colors ${
 							mode === "chat"
-								? "bg-gray-800 text-gray-200"
-								: "text-gray-500 hover:text-gray-300"
+								? "bg-muted text-foreground"
+								: "text-muted-foreground hover:text-foreground"
 						}`}
 					>
 						<MessageSquare size={12} />
@@ -153,8 +154,8 @@ export default function ChatInput() {
 						onClick={() => setMode("manual")}
 						className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] transition-colors ${
 							mode === "manual"
-								? "bg-gray-800 text-gray-200"
-								: "text-gray-500 hover:text-gray-300"
+								? "bg-muted text-foreground"
+								: "text-muted-foreground hover:text-foreground"
 						}`}
 					>
 						<Plus size={12} />
@@ -164,7 +165,7 @@ export default function ChatInput() {
 				<button
 					type="button"
 					onClick={() => setCollapsed((prev) => !prev)}
-					className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+					className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
 				>
 					{collapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
 				</button>
@@ -213,32 +214,36 @@ function ChatMode({
 		<>
 			{/* Message history */}
 			{messages.length > 0 && (
-				<div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2">
-					{messages.map((msg) => (
-						<MessageBubble key={msg.id} message={msg} />
-					))}
-					<div ref={messagesEndRef} />
-				</div>
+				<ScrollArea className="flex-1">
+					<div className="px-4 pb-2 space-y-2">
+						{messages.map((msg) => (
+							<MessageBubble key={msg.id} message={msg} />
+						))}
+						<div ref={messagesEndRef} />
+					</div>
+				</ScrollArea>
 			)}
 
 			{/* Input */}
 			<form onSubmit={onSubmit} className="flex items-center gap-2 px-4 py-3">
-				<input
+				<Input
 					ref={inputRef}
 					type="text"
 					value={input}
 					onChange={(e) => setInput(e.target.value)}
 					placeholder="Type to add people and connections..."
 					disabled={loading}
-					className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 outline-none focus:border-gray-600 focus:ring-1 focus:ring-gray-600 disabled:opacity-50"
+					className="flex-1 bg-muted text-foreground placeholder:text-muted-foreground"
 				/>
-				<button
+				<Button
 					type="submit"
+					variant="secondary"
+					size="icon"
 					disabled={loading || !input.trim()}
-					className="flex items-center justify-center rounded-lg bg-gray-700 p-2 text-gray-300 transition-colors hover:bg-gray-600 hover:text-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+					className="shrink-0"
 				>
 					<SendHorizontal size={18} />
-				</button>
+				</Button>
 			</form>
 		</>
 	);
@@ -299,7 +304,10 @@ function ManualMode() {
 			className="flex items-end gap-3 px-4 py-3 flex-wrap"
 		>
 			<div className="flex flex-col gap-1">
-				<label htmlFor="manual-name" className="text-[11px] text-gray-400">
+				<label
+					htmlFor="manual-name"
+					className="text-[11px] text-muted-foreground"
+				>
 					Name
 				</label>
 				<Input
@@ -307,28 +315,31 @@ function ManualMode() {
 					placeholder="Person name"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
-					className="w-40 h-8 text-sm bg-gray-800 border-gray-700 text-gray-100"
+					className="w-40 h-8 text-sm bg-muted border-border text-foreground"
 					autoComplete="off"
 				/>
 			</div>
 
 			<div className="flex flex-col gap-1">
-				<label htmlFor="manual-connect" className="text-[11px] text-gray-400">
+				<label
+					htmlFor="manual-connect"
+					className="text-[11px] text-muted-foreground"
+				>
 					Connect to
 				</label>
 				<Select value={connectToId} onValueChange={setConnectToId}>
 					<SelectTrigger
 						id="manual-connect"
-						className="w-40 h-8 text-sm bg-gray-800 border-gray-700 text-gray-100"
+						className="w-40 h-8 text-sm bg-muted border-border text-foreground"
 					>
 						<SelectValue placeholder="Select..." />
 					</SelectTrigger>
-					<SelectContent className="bg-gray-800 border-gray-700">
+					<SelectContent className="bg-muted border-border">
 						{state.persons.map((p) => (
 							<SelectItem
 								key={p.id}
 								value={p.id}
-								className="text-sm text-gray-200"
+								className="text-sm text-foreground"
 							>
 								{p.name}
 							</SelectItem>
@@ -338,7 +349,10 @@ function ManualMode() {
 			</div>
 
 			<div className="flex flex-col gap-1">
-				<label htmlFor="manual-reltype" className="text-[11px] text-gray-400">
+				<label
+					htmlFor="manual-reltype"
+					className="text-[11px] text-muted-foreground"
+				>
 					Relationship
 				</label>
 				<Select
@@ -347,16 +361,16 @@ function ManualMode() {
 				>
 					<SelectTrigger
 						id="manual-reltype"
-						className="w-40 h-8 text-sm bg-gray-800 border-gray-700 text-gray-100"
+						className="w-40 h-8 text-sm bg-muted border-border text-foreground"
 					>
 						<SelectValue />
 					</SelectTrigger>
-					<SelectContent className="bg-gray-800 border-gray-700">
+					<SelectContent className="bg-muted border-border">
 						{RELATIONSHIP_TYPES.map((t) => (
 							<SelectItem
 								key={t.value}
 								value={t.value}
-								className="text-sm text-gray-200"
+								className="text-sm text-foreground"
 							>
 								{t.label}
 							</SelectItem>
@@ -368,8 +382,9 @@ function ManualMode() {
 			<Button
 				type="submit"
 				disabled={!name.trim() || !connectToId}
+				variant="secondary"
 				size="sm"
-				className="h-8 bg-gray-700 text-gray-200 hover:bg-gray-600"
+				className="h-8"
 			>
 				<Plus size={14} className="mr-1" />
 				Add
@@ -386,7 +401,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 	if (message.role === "loading") {
 		return (
 			<div className="flex justify-start">
-				<div className="rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-400">
+				<div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
 					<span className="inline-flex gap-1">
 						<span className="animate-bounce" style={{ animationDelay: "0ms" }}>
 							.
@@ -412,7 +427,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 	if (message.role === "user") {
 		return (
 			<div className="flex justify-end">
-				<div className="max-w-[80%] rounded-lg bg-gray-700 px-3 py-2 text-sm text-gray-100">
+				<div className="max-w-[80%] rounded-lg bg-secondary px-3 py-2 text-sm text-foreground">
 					{message.content}
 				</div>
 			</div>
@@ -432,7 +447,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 	// assistant
 	return (
 		<div className="flex justify-start">
-			<div className="max-w-[80%] rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-200">
+			<div className="max-w-[80%] rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
 				{message.content}
 			</div>
 		</div>

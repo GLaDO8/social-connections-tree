@@ -9,6 +9,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useGraph } from "@/context/GraphContext";
 import { exportGraph, importGraphFromFile } from "@/lib/persistence";
 
@@ -39,9 +45,9 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 	}
 
 	return (
-		<header className="flex h-12 w-full items-center justify-between border-b border-gray-800 bg-gray-900/80 px-4 backdrop-blur">
+		<header className="flex h-12 w-full items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur">
 			{/* Title */}
-			<h1 className="truncate text-sm font-semibold text-gray-100">
+			<h1 className="truncate text-sm font-semibold text-foreground">
 				{metadata.title}
 			</h1>
 
@@ -53,11 +59,11 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 				>
 					<SelectTrigger
 						size="sm"
-						className="min-w-[140px] border-gray-700 bg-gray-800/60 text-gray-200"
+						className="min-w-[140px] border-border bg-muted/60 text-foreground"
 					>
 						<SelectValue placeholder="All" />
 					</SelectTrigger>
-					<SelectContent className="border-gray-700 bg-gray-900 text-gray-200">
+					<SelectContent className="border-border bg-card text-foreground">
 						<SelectItem value="all">All</SelectItem>
 						{cohorts.map((cohort) => (
 							<SelectItem key={cohort.id} value={cohort.id}>
@@ -73,34 +79,49 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 					</SelectContent>
 				</Select>
 
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="text-gray-400 hover:text-gray-200"
-					title="Export graph"
-					onClick={handleExport}
-				>
-					<Download className="size-4" />
-				</Button>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="text-muted-foreground hover:text-foreground"
+								onClick={handleExport}
+							>
+								<Download className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Export graph</TooltipContent>
+					</Tooltip>
 
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="text-gray-400 hover:text-gray-200"
-					title="Import graph"
-					onClick={handleImport}
-				>
-					<Upload className="size-4" />
-				</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="text-muted-foreground hover:text-foreground"
+								onClick={handleImport}
+							>
+								<Upload className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Import graph</TooltipContent>
+					</Tooltip>
 
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="text-gray-400 hover:text-gray-200"
-					onClick={onSettingsClick}
-				>
-					<Settings className="size-4" />
-				</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="text-muted-foreground hover:text-foreground"
+								onClick={onSettingsClick}
+							>
+								<Settings className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Settings</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 			</div>
 		</header>
 	);

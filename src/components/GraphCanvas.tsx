@@ -282,7 +282,7 @@ export default function GraphCanvas({
 			/>
 			{hoveredNode && hoveredPosition && (
 				<div
-					className="pointer-events-none absolute z-10 rounded bg-gray-900/90 px-2 py-1 text-xs text-white shadow-lg"
+					className="pointer-events-none absolute z-10 rounded bg-popover/90 px-2 py-1 text-xs text-popover-foreground shadow-lg"
 					style={{
 						left:
 							hoveredPosition.x -

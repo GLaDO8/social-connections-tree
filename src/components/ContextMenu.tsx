@@ -104,22 +104,22 @@ export default function ContextMenu({
 		return (
 			<div
 				ref={menuRef}
-				className="fixed z-50 min-w-[160px] rounded-md border border-gray-700 bg-gray-900 py-1 shadow-xl"
+				className="fixed z-50 min-w-[160px] rounded-md border border-border bg-popover text-popover-foreground py-1 shadow-xl"
 				style={{ left: clampedX, top: clampedY }}
 			>
 				<button
 					type="button"
 					onClick={handleEditNode}
-					className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-800 transition-colors"
+					className="flex w-full items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
 				>
-					<Pencil size={14} className="text-gray-400" />
+					<Pencil size={14} className="text-muted-foreground" />
 					Edit
 				</button>
 				{!isEgoNode && (
 					<button
 						type="button"
 						onClick={handleDeleteNode}
-						className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-800 transition-colors"
+						className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-accent transition-colors"
 					>
 						<Trash2 size={14} />
 						Delete
@@ -132,21 +132,21 @@ export default function ContextMenu({
 	return (
 		<div
 			ref={menuRef}
-			className="fixed z-50 min-w-[160px] rounded-md border border-gray-700 bg-gray-900 py-1 shadow-xl"
+			className="fixed z-50 min-w-[160px] rounded-md border border-border bg-popover text-popover-foreground py-1 shadow-xl"
 			style={{ left: clampedX, top: clampedY }}
 		>
 			<button
 				type="button"
 				onClick={handleEditEdge}
-				className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-800 transition-colors"
+				className="flex w-full items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
 			>
-				<Pencil size={14} className="text-gray-400" />
+				<Pencil size={14} className="text-muted-foreground" />
 				Edit
 			</button>
 			<button
 				type="button"
 				onClick={handleDeleteEdge}
-				className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-800 transition-colors"
+				className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-accent transition-colors"
 			>
 				<Trash2 size={14} />
 				Delete

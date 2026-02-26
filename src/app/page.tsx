@@ -8,6 +8,7 @@ import GraphCanvas from "@/components/GraphCanvas";
 import Header from "@/components/Header";
 import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import PropertiesPanel from "@/components/PropertiesPanel";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { GraphProvider } from "@/context/GraphContext";
 import type { ForceSimulation } from "@/lib/force-config";
 
@@ -38,24 +39,26 @@ export default function Home() {
 
 	return (
 		<GraphProvider>
-			<KeyboardShortcuts />
-			<div className="h-screen w-screen flex flex-col overflow-hidden bg-gray-950">
-				<Header onSettingsClick={() => setCohortManagerOpen(true)} />
-				<div className="flex-1 relative">
-					<GraphCanvas onSimulationReady={handleSimulationReady} />
+			<TooltipProvider delayDuration={300}>
+				<KeyboardShortcuts />
+				<div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
+					<Header onSettingsClick={() => setCohortManagerOpen(true)} />
+					<div className="flex-1 relative">
+						<GraphCanvas onSimulationReady={handleSimulationReady} />
+					</div>
+					<ChatInput />
+					<PropertiesPanel />
+					<CohortManager
+						open={cohortManagerOpen}
+						onClose={() => setCohortManagerOpen(false)}
+					/>
+					<DevPanel
+						open={devPanelOpen}
+						onClose={() => setDevPanelOpen(false)}
+						simulationRef={simulationRefHolder}
+					/>
 				</div>
-				<ChatInput />
-				<PropertiesPanel />
-				<CohortManager
-					open={cohortManagerOpen}
-					onClose={() => setCohortManagerOpen(false)}
-				/>
-				<DevPanel
-					open={devPanelOpen}
-					onClose={() => setDevPanelOpen(false)}
-					simulationRef={simulationRefHolder}
-				/>
-			</div>
+			</TooltipProvider>
 		</GraphProvider>
 	);
 }

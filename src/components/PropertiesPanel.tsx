@@ -2,7 +2,9 @@
 
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,6 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useGraph } from "@/context/GraphContext";
@@ -110,21 +113,25 @@ function NodePanel() {
 		<>
 			{/* Header */}
 			<div className="flex items-center justify-between p-3">
-				<h3 className="text-sm font-semibold text-gray-100">
+				<h3 className="text-sm font-semibold text-foreground">
 					{person.isEgo ? "You" : "Person"}
 				</h3>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					className="text-muted-foreground hover:text-foreground"
 					onClick={() => setSelectedNodeId(null)}
-					className="text-gray-400 hover:text-gray-200 transition-colors"
 				>
 					<X size={16} />
-				</button>
+				</Button>
 			</div>
 
 			{/* Name */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-				<Label className="text-xs text-gray-300 mb-1.5 block">Name</Label>
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<Label className="text-xs text-muted-foreground mb-1.5 block">
+					Name
+				</Label>
 				<Input
 					value={name}
 					onChange={(e) => setName(e.target.value)}
@@ -132,26 +139,30 @@ function NodePanel() {
 					onKeyDown={(e) => {
 						if (e.key === "Enter") commitName();
 					}}
-					className="h-8 text-sm bg-gray-800 border-gray-700 text-gray-100"
+					className="h-8 text-sm bg-muted border-border text-foreground"
 					disabled={person.isEgo}
 				/>
 			</div>
 
 			{/* Cohorts */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-				<Label className="text-xs text-gray-300 mb-1.5 block">Cohorts</Label>
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<Label className="text-xs text-muted-foreground mb-1.5 block">
+					Cohorts
+				</Label>
 				<div className="flex flex-wrap gap-1.5 mb-2">
 					{personCohorts.length === 0 && (
-						<span className="text-xs text-gray-500 italic">None</span>
+						<span className="text-xs text-muted-foreground italic">None</span>
 					)}
 					{personCohorts.map((cohort) => (
-						<span
+						<Badge
 							key={cohort.id}
-							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+							variant="outline"
+							className="gap-1"
 							style={{
 								backgroundColor: `${cohort.color}22`,
 								color: cohort.color,
-								border: `1px solid ${cohort.color}44`,
+								borderColor: `${cohort.color}44`,
 							}}
 						>
 							{cohort.name}
@@ -162,20 +173,20 @@ function NodePanel() {
 							>
 								<X size={10} />
 							</button>
-						</span>
+						</Badge>
 					))}
 				</div>
 				{availableCohorts.length > 0 && (
 					<Select onValueChange={addCohort}>
-						<SelectTrigger className="h-7 text-xs bg-gray-800 border-gray-700 text-gray-300">
+						<SelectTrigger className="h-7 text-xs bg-muted border-border text-muted-foreground">
 							<SelectValue placeholder="Add cohort..." />
 						</SelectTrigger>
-						<SelectContent className="bg-gray-800 border-gray-700">
+						<SelectContent className="bg-muted border-border">
 							{availableCohorts.map((cohort) => (
 								<SelectItem
 									key={cohort.id}
 									value={cohort.id}
-									className="text-xs text-gray-200"
+									className="text-xs text-foreground"
 								>
 									<span className="flex items-center gap-1.5">
 										<span
@@ -192,66 +203,75 @@ function NodePanel() {
 			</div>
 
 			{/* Notes */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-				<Label className="text-xs text-gray-300 mb-1.5 block">Notes</Label>
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<Label className="text-xs text-muted-foreground mb-1.5 block">
+					Notes
+				</Label>
 				<Textarea
 					value={notes}
 					onChange={(e) => setNotes(e.target.value)}
 					onBlur={commitNotes}
 					placeholder="Add notes..."
-					className="text-sm bg-gray-800 border-gray-700 text-gray-100 min-h-[60px] resize-none"
+					className="text-sm bg-muted border-border text-foreground min-h-[60px] resize-none"
 					rows={3}
 				/>
 			</div>
 
 			{/* Relationships */}
 			{connectedRelationships.length > 0 && (
-				<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-					<Label className="text-xs text-gray-300 mb-1.5 block">
-						Relationships
-					</Label>
-					<div className="space-y-1">
-						{connectedRelationships.map((rel) => {
-							const otherName = getOtherPersonName(rel);
-							const typeLabel =
-								RELATIONSHIP_TYPES.find((t) => t.value === rel.type)?.label ??
-								rel.type;
-							return (
-								<button
-									type="button"
-									key={rel.id}
-									onClick={() => {
-										setSelectedNodeId(null);
-										setSelectedEdgeId(rel.id);
-									}}
-									className="w-full text-left px-2 py-1.5 rounded text-xs text-gray-300 hover:bg-gray-800 transition-colors flex items-center justify-between"
-								>
-									<span className="truncate">{otherName}</span>
-									<span className="text-gray-500 ml-2 flex-shrink-0">
-										{typeLabel}
-									</span>
-								</button>
-							);
-						})}
+				<>
+					<Separator />
+					<div className="px-3 pb-3 pt-3">
+						<Label className="text-xs text-muted-foreground mb-1.5 block">
+							Relationships
+						</Label>
+						<div className="space-y-1">
+							{connectedRelationships.map((rel) => {
+								const otherName = getOtherPersonName(rel);
+								const typeLabel =
+									RELATIONSHIP_TYPES.find((t) => t.value === rel.type)?.label ??
+									rel.type;
+								return (
+									<button
+										type="button"
+										key={rel.id}
+										onClick={() => {
+											setSelectedNodeId(null);
+											setSelectedEdgeId(rel.id);
+										}}
+										className="w-full text-left px-2 py-1.5 rounded text-xs text-muted-foreground hover:bg-accent transition-colors flex items-center justify-between"
+									>
+										<span className="truncate">{otherName}</span>
+										<span className="text-muted-foreground ml-2 flex-shrink-0">
+											{typeLabel}
+										</span>
+									</button>
+								);
+							})}
+						</div>
 					</div>
-				</div>
+				</>
 			)}
 
 			{/* Delete */}
 			{!person.isEgo && (
-				<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-					<Button
-						variant="destructive"
-						size="sm"
-						className="w-full text-xs"
-						onClick={() => {
-							dispatch({ type: "REMOVE_PERSON", payload: { id: person.id } });
-							setSelectedNodeId(null);
-						}}
-					>
-						Delete person
-					</Button>
-				</div>
+				<>
+					<Separator />
+					<div className="px-3 pb-3 pt-3">
+						<Button
+							variant="destructive"
+							size="sm"
+							className="w-full text-xs"
+							onClick={() => {
+								dispatch({ type: "REMOVE_PERSON", payload: { id: person.id } });
+								setSelectedNodeId(null);
+							}}
+						>
+							Delete person
+						</Button>
+					</div>
+				</>
 			)}
 		</>
 	);
@@ -321,38 +341,43 @@ function EdgePanel() {
 		<>
 			{/* Header */}
 			<div className="flex items-center justify-between p-3">
-				<h3 className="text-sm font-semibold text-gray-100">Relationship</h3>
-				<button
-					type="button"
+				<h3 className="text-sm font-semibold text-foreground">Relationship</h3>
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					className="text-muted-foreground hover:text-foreground"
 					onClick={() => setSelectedEdgeId(null)}
-					className="text-gray-400 hover:text-gray-200 transition-colors"
 				>
 					<X size={16} />
-				</button>
+				</Button>
 			</div>
 
 			{/* Source -> Target */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-				<p className="text-sm text-gray-100 font-medium">
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<p className="text-sm text-foreground font-medium">
 					{sourcePerson?.name ?? "Unknown"}
-					<span className="text-gray-500 mx-1.5">&rarr;</span>
+					<span className="text-muted-foreground mx-1.5">&rarr;</span>
 					{targetPerson?.name ?? "Unknown"}
 				</p>
 			</div>
 
 			{/* Type */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-				<Label className="text-xs text-gray-300 mb-1.5 block">Type</Label>
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<Label className="text-xs text-muted-foreground mb-1.5 block">
+					Type
+				</Label>
 				<Select value={relationship.type} onValueChange={handleTypeChange}>
-					<SelectTrigger className="h-8 text-sm bg-gray-800 border-gray-700 text-gray-100">
+					<SelectTrigger className="h-8 text-sm bg-muted border-border text-foreground">
 						<SelectValue />
 					</SelectTrigger>
-					<SelectContent className="bg-gray-800 border-gray-700">
+					<SelectContent className="bg-muted border-border">
 						{RELATIONSHIP_TYPES.map((rt) => (
 							<SelectItem
 								key={rt.value}
 								value={rt.value}
-								className="text-sm text-gray-200"
+								className="text-sm text-foreground"
 							>
 								{rt.label}
 							</SelectItem>
@@ -362,8 +387,11 @@ function EdgePanel() {
 			</div>
 
 			{/* Label */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
-				<Label className="text-xs text-gray-300 mb-1.5 block">Label</Label>
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
+				<Label className="text-xs text-muted-foreground mb-1.5 block">
+					Label
+				</Label>
 				<Input
 					value={label}
 					onChange={(e) => setLabel(e.target.value)}
@@ -372,15 +400,16 @@ function EdgePanel() {
 						if (e.key === "Enter") commitLabel();
 					}}
 					placeholder="e.g. college roommate"
-					className="h-8 text-sm bg-gray-800 border-gray-700 text-gray-100"
+					className="h-8 text-sm bg-muted border-border text-foreground"
 				/>
 			</div>
 
 			{/* Bond Strength */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
 				<div className="flex items-center justify-between mb-2">
-					<Label className="text-xs text-gray-300">Bond Strength</Label>
-					<span className="text-xs text-gray-400">
+					<Label className="text-xs text-muted-foreground">Bond Strength</Label>
+					<span className="text-xs text-muted-foreground">
 						{relationship.bondStrength} &mdash;{" "}
 						{BOND_LABELS[relationship.bondStrength]}
 					</span>
@@ -394,16 +423,17 @@ function EdgePanel() {
 					className="w-full"
 				/>
 				<div className="flex justify-between mt-1">
-					<span className="text-[10px] text-gray-500">1</span>
-					<span className="text-[10px] text-gray-500">2</span>
-					<span className="text-[10px] text-gray-500">3</span>
-					<span className="text-[10px] text-gray-500">4</span>
-					<span className="text-[10px] text-gray-500">5</span>
+					<span className="text-[10px] text-muted-foreground">1</span>
+					<span className="text-[10px] text-muted-foreground">2</span>
+					<span className="text-[10px] text-muted-foreground">3</span>
+					<span className="text-[10px] text-muted-foreground">4</span>
+					<span className="text-[10px] text-muted-foreground">5</span>
 				</div>
 			</div>
 
 			{/* Delete */}
-			<div className="px-3 pb-3 border-t border-gray-800 pt-3">
+			<Separator />
+			<div className="px-3 pb-3 pt-3">
 				<Button
 					variant="destructive"
 					size="sm"
@@ -433,11 +463,8 @@ export default function PropertiesPanel() {
 	if (!selectedNodeId && !selectedEdgeId) return null;
 
 	return (
-		<div
-			className="fixed right-4 top-16 w-72 bg-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
-			style={{ zIndex: 40 }}
-		>
+		<Card className="fixed right-4 top-16 w-72 gap-0 py-0 shadow-xl overflow-hidden z-40">
 			{selectedNodeId ? <NodePanel /> : <EdgePanel />}
-		</div>
+		</Card>
 	);
 }
