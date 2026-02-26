@@ -1,6 +1,6 @@
 # Phase 3: Chat-style NL Input
 
-**Status**: not started
+**Status**: done
 **Spec refs**: [nl-pipeline](../specs/nl-pipeline.md), [chat-ux](../specs/chat-ux.md)
 **Goal**: The primary way to build the graph — type natural language, see nodes appear.
 

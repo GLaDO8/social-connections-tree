@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ChatInput from "@/components/ChatInput";
 import CohortManager from "@/components/CohortManager";
 import DevPanel from "@/components/DevPanel";
 import GraphCanvas from "@/components/GraphCanvas";
 import Header from "@/components/Header";
 import PropertiesPanel from "@/components/PropertiesPanel";
-import TempAddForm from "@/components/TempAddForm";
 import { GraphProvider } from "@/context/GraphContext";
 import type { ForceSimulation } from "@/lib/force-config";
 
@@ -42,7 +42,7 @@ export default function Home() {
 				<div className="flex-1 relative">
 					<GraphCanvas onSimulationReady={handleSimulationReady} />
 				</div>
-				<TempAddForm />
+				<ChatInput />
 				<PropertiesPanel />
 				<CohortManager
 					open={cohortManagerOpen}
