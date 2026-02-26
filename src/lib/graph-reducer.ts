@@ -82,7 +82,8 @@ export function graphReducer(
 			const person: Person = {
 				...rest,
 				id: providedId ?? crypto.randomUUID(),
-			};
+				_addedAt: Date.now(),
+			} as Person;
 			return withTimestamp({
 				...state,
 				persons: [...state.persons, person],
@@ -91,6 +92,8 @@ export function graphReducer(
 
 		case "REMOVE_PERSON": {
 			const { id } = action.payload;
+			const person = state.persons.find((p) => p.id === id);
+			if (!person || person.isEgo) return state;
 			return withTimestamp({
 				...state,
 				persons: state.persons.filter((p) => p.id !== id),
@@ -141,7 +144,11 @@ export function graphReducer(
 
 		case "ADD_PERSON_WITH_RELATIONSHIP": {
 			const personId = crypto.randomUUID();
-			const person: Person = { ...action.payload.person, id: personId };
+			const person: Person = {
+				...action.payload.person,
+				id: personId,
+				_addedAt: Date.now(),
+			} as Person;
 			const relationship: Relationship = {
 				...action.payload.relationship,
 				id: crypto.randomUUID(),

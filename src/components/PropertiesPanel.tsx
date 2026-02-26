@@ -21,8 +21,8 @@ import { useGraph } from "@/context/GraphContext";
 import { generateCohortCompletionActions } from "@/lib/apply-operations";
 import { BOND_LABELS, RELATIONSHIP_TYPES } from "@/lib/graph-constants";
 import { graphReducer } from "@/lib/graph-reducer";
-import { getRelationshipCategory } from "@/lib/graph-utils";
-import type { BondStrength, RelationshipType } from "@/types/graph";
+import { getBondStrength } from "@/lib/relationship-config";
+import type { RelationshipType } from "@/types/graph";
 
 // ---------------------------------------------------------------------------
 // Node Panel
@@ -307,7 +307,7 @@ function EdgePanel() {
 
 	useEffect(() => {
 		if (maybeRelationship) {
-			setLabel(maybeRelationship.label);
+			setLabel(maybeRelationship.label ?? "");
 			setEdgeNotes(maybeRelationship.notes ?? "");
 		}
 	}, [maybeRelationship]);
@@ -324,7 +324,7 @@ function EdgePanel() {
 
 	function commitLabel() {
 		const trimmed = label.trim();
-		if (trimmed !== relationship.label) {
+		if (trimmed !== (relationship.label ?? "")) {
 			dispatch({
 				type: "UPDATE_RELATIONSHIP",
 				payload: { id: relationship.id, label: trimmed },
@@ -343,24 +343,16 @@ function EdgePanel() {
 
 	function handleTypeChange(value: string) {
 		const newType = value as RelationshipType;
-		const newCategory = getRelationshipCategory(newType);
 		dispatch({
 			type: "UPDATE_RELATIONSHIP",
 			payload: {
 				id: relationship.id,
 				type: newType,
-				category: newCategory,
 			},
 		});
 	}
 
-	function handleBondStrengthChange(values: number[]) {
-		const newStrength = values[0] as BondStrength;
-		dispatch({
-			type: "UPDATE_RELATIONSHIP",
-			payload: { id: relationship.id, bondStrength: newStrength },
-		});
-	}
+	const derivedBondStrength = getBondStrength(relationship.type);
 
 	return (
 		<>
@@ -429,22 +421,21 @@ function EdgePanel() {
 				/>
 			</div>
 
-			{/* Bond Strength */}
+			{/* Bond Strength (derived from relationship type) */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
 				<div className="flex items-center justify-between mb-2">
 					<Label className="text-xs text-muted-foreground">Bond Strength</Label>
 					<span className="text-xs text-muted-foreground">
-						{relationship.bondStrength} &mdash;{" "}
-						{BOND_LABELS[relationship.bondStrength]}
+						{derivedBondStrength} &mdash; {BOND_LABELS[derivedBondStrength]}
 					</span>
 				</div>
 				<Slider
 					min={1}
 					max={5}
 					step={1}
-					value={[relationship.bondStrength]}
-					onValueChange={handleBondStrengthChange}
+					value={[derivedBondStrength]}
+					disabled
 					className="w-full"
 				/>
 				<div className="flex justify-between mt-1">

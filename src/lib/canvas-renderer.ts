@@ -1,10 +1,7 @@
+import type { RelationshipCategory } from "@/lib/relationship-config";
+import { getBondStrength, getCategory } from "@/lib/relationship-config";
 import type { DevSettings } from "@/types/dev-settings";
-import type {
-	Cohort,
-	Person,
-	Relationship,
-	RelationshipCategory,
-} from "@/types/graph";
+import type { Cohort, Person, Relationship } from "@/types/graph";
 import { EGO_RADIUS, NODE_RADIUS } from "./graph-constants";
 
 const FALLBACK_EDGE_COLORS: Record<RelationshipCategory, string> = {
@@ -118,6 +115,13 @@ export function render(
 	ctx.translate(transform.x, transform.y);
 	ctx.scale(transform.k, transform.k);
 
+	// Visible viewport in world coordinates (for culling off-screen elements)
+	const viewMinX = -transform.x / transform.k;
+	const viewMinY = -transform.y / transform.k;
+	const viewMaxX = (width - transform.x) / transform.k;
+	const viewMaxY = (height - transform.y) / transform.k;
+	const viewPadding = 50;
+
 	// 3. Draw edges — batched by style to reduce draw calls
 	const edgeBatches = new Map<
 		string,
@@ -136,15 +140,27 @@ export function render(
 		)
 			continue;
 
-		const color = edgeColors[rel.category] ?? edgeColors.default;
+		// Skip edges entirely outside viewport
+		const minEdgeX = Math.min(source.x, target.x);
+		const maxEdgeX = Math.max(source.x, target.x);
+		const minEdgeY = Math.min(source.y, target.y);
+		const maxEdgeY = Math.max(source.y, target.y);
+		if (
+			maxEdgeX < viewMinX - viewPadding ||
+			minEdgeX > viewMaxX + viewPadding ||
+			maxEdgeY < viewMinY - viewPadding ||
+			minEdgeY > viewMaxY + viewPadding
+		)
+			continue;
+
+		const category = getCategory(rel.type);
+		const color = edgeColors[category] ?? edgeColors.default;
 		let lw: number;
 		if (rel.id === selectedEdgeId) {
 			lw = selectedEdgeWidth;
 		} else if (bondToThickness) {
-			// Map bondStrength 1-5 → edgeWidthMin-edgeWidthMax
-			lw =
-				edgeWidthMin +
-				((rel.bondStrength - 1) / 4) * (edgeWidthMax - edgeWidthMin);
+			const bs = getBondStrength(rel.type);
+			lw = edgeWidthMin + ((bs - 1) / 4) * (edgeWidthMax - edgeWidthMin);
 		} else {
 			lw = edgeWidth;
 		}
@@ -176,8 +192,30 @@ export function render(
 	ctx.textAlign = "center";
 	ctx.textBaseline = "top";
 
+	const FADE_DURATION = 300;
+
 	for (const person of persons) {
 		if (person.x == null || person.y == null) continue;
+
+		// Skip nodes entirely outside viewport
+		if (
+			person.x < viewMinX - viewPadding ||
+			person.x > viewMaxX + viewPadding ||
+			person.y < viewMinY - viewPadding ||
+			person.y > viewMaxY + viewPadding
+		)
+			continue;
+
+		// Compute fade-in opacity for recently added nodes
+		const addedAt = (person as any)._addedAt;
+		let nodeAlpha = 1;
+		if (addedAt) {
+			const elapsed = Date.now() - addedAt;
+			if (elapsed < FADE_DURATION) {
+				nodeAlpha = elapsed / FADE_DURATION;
+			}
+		}
+		ctx.globalAlpha = nodeAlpha;
 
 		const baseRadius = person.isEgo ? egoRadius : nodeRadius;
 		const cohortId = person.cohortIds[0];
@@ -230,11 +268,14 @@ export function render(
 			ctx.stroke();
 		}
 
-		// Label
-		if (showLabels) {
+		// Label (hidden when zoomed out below 40%)
+		if (showLabels && transform.k > 0.4) {
 			ctx.fillStyle = labelColor;
 			ctx.fillText(person.name, person.x, person.y + drawRadius + labelOffset);
 		}
+
+		// Restore full opacity after drawing this node
+		ctx.globalAlpha = 1;
 	}
 
 	// 5. Restore context

@@ -65,17 +65,25 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 					</SelectTrigger>
 					<SelectContent className="border-border bg-card text-foreground">
 						<SelectItem value="all">All</SelectItem>
-						{cohorts.map((cohort) => (
-							<SelectItem key={cohort.id} value={cohort.id}>
-								<span className="flex items-center gap-2">
-									<span
-										className="inline-block size-2.5 shrink-0 rounded-full"
-										style={{ backgroundColor: cohort.color }}
-									/>
-									{cohort.name}
-								</span>
-							</SelectItem>
-						))}
+						{cohorts.map((cohort) => {
+							const memberCount = state.persons.filter((p) =>
+								p.cohortIds.includes(cohort.id),
+							).length;
+							return (
+								<SelectItem key={cohort.id} value={cohort.id}>
+									<span className="flex items-center gap-2">
+										<span
+											className="inline-block size-2.5 shrink-0 rounded-full"
+											style={{ backgroundColor: cohort.color }}
+										/>
+										{cohort.name}
+										<span className="text-muted-foreground">
+											({memberCount})
+										</span>
+									</span>
+								</SelectItem>
+							);
+						})}
 					</SelectContent>
 				</Select>
 

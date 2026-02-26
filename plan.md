@@ -27,4 +27,4 @@ See [`plans/README.md`](./plans/README.md) for the full index.
 | [Phase 2](plans/phase-2-visual-properties-devpanel.md) | Visual Encoding + Properties + Dev Panel | done |
 | [Phase 3](plans/phase-3-nl-chat.md) | Chat-style NL Input | done |
 | [Phase 4](plans/phase-4-undo-persistence.md) | Undo/Redo + Persistence | done |
-| [Phase 5](plans/phase-5-polish.md) | Polish + Edge Cases | not started |
+| [Phase 5](plans/phase-5-polish.md) | Polish + Edge Cases | done |

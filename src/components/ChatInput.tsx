@@ -21,10 +21,6 @@ import {
 import { useGraph } from "@/context/GraphContext";
 import { resolveOperations } from "@/lib/apply-operations";
 import { RELATIONSHIP_TYPES } from "@/lib/graph-constants";
-import {
-	getDefaultBondStrength,
-	getRelationshipCategory,
-} from "@/lib/graph-utils";
 import type { RelationshipType } from "@/types/graph";
 import type { ParseInputResponse } from "@/types/operations";
 
@@ -193,6 +189,13 @@ export default function ChatInput() {
 // Chat mode
 // ---------------------------------------------------------------------------
 
+const EXAMPLE_PROMPTS = [
+	"Kavya is my childhood friend from FIITJEE",
+	"Ashish is my college roommate",
+	"Nishant and I work together at the same company",
+	"Connect Kavya and Nishant as classmates",
+];
+
 function ChatMode({
 	messages,
 	messagesEndRef,
@@ -210,6 +213,10 @@ function ChatMode({
 	inputRef: React.RefObject<HTMLInputElement | null>;
 	onSubmit: (e?: React.FormEvent) => void;
 }) {
+	const { state } = useGraph();
+	const isEmptyGraph = state.persons.length <= 1;
+	const showExamplePrompts = messages.length === 0 && isEmptyGraph;
+
 	return (
 		<>
 			{/* Message history */}
@@ -222,6 +229,30 @@ function ChatMode({
 						<div ref={messagesEndRef} />
 					</div>
 				</ScrollArea>
+			)}
+
+			{/* Example prompts for empty state */}
+			{showExamplePrompts && (
+				<div className="px-4 pb-2 pt-1">
+					<p className="text-[11px] text-muted-foreground mb-2">
+						Try one of these to get started:
+					</p>
+					<div className="flex flex-wrap gap-2">
+						{EXAMPLE_PROMPTS.map((prompt) => (
+							<button
+								key={prompt}
+								type="button"
+								onClick={() => {
+									setInput(prompt);
+									inputRef.current?.focus();
+								}}
+								className="rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground hover:border-muted-foreground/50"
+							>
+								{prompt}
+							</button>
+						))}
+					</div>
+				</div>
 			)}
 
 			{/* Input */}
@@ -273,9 +304,7 @@ function ManualMode() {
 		const relPayload = {
 			targetId: connectToId,
 			type: relType,
-			category: getRelationshipCategory(relType),
 			label: relType.replace(/_/g, " "),
-			bondStrength: getDefaultBondStrength(relType),
 		};
 
 		if (existingPerson) {

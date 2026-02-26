@@ -23,8 +23,9 @@ const CATEGORY_MAP: Record<RelationshipType, RelationshipCategory> = {
 	other: "default",
 };
 
-// 1 = distant, 5 = inseparable
-const BOND_STRENGTH_MAP: Record<RelationshipType, number> = {
+export type BondStrength = 1 | 2 | 3 | 4 | 5;
+
+const BOND_STRENGTH_MAP: Record<RelationshipType, BondStrength> = {
 	acquaintance: 1,
 	other: 1,
 	colleague: 2,
@@ -45,6 +46,6 @@ export function getCategory(type: RelationshipType): RelationshipCategory {
 	return CATEGORY_MAP[type];
 }
 
-export function getBondStrength(type: RelationshipType): number {
+export function getBondStrength(type: RelationshipType): BondStrength {
 	return BOND_STRENGTH_MAP[type];
 }

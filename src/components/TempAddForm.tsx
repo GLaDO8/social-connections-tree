@@ -13,10 +13,6 @@ import {
 } from "@/components/ui/select";
 import { useGraph } from "@/context/GraphContext";
 import { RELATIONSHIP_TYPES } from "@/lib/graph-constants";
-import {
-	getDefaultBondStrength,
-	getRelationshipCategory,
-} from "@/lib/graph-utils";
 import type { RelationshipType } from "@/types/graph";
 
 export default function TempAddForm() {
@@ -39,9 +35,7 @@ export default function TempAddForm() {
 		const relPayload = {
 			targetId: connectToId,
 			type: relType,
-			category: getRelationshipCategory(relType),
 			label: relType.replace(/_/g, " "),
-			bondStrength: getDefaultBondStrength(relType),
 		};
 
 		if (existingPerson) {

@@ -1,4 +1,5 @@
-import type { BondStrength, RelationshipType } from "@/types/graph";
+import type { BondStrength } from "@/lib/relationship-config";
+import type { RelationshipType } from "@/types/graph";
 
 export const NODE_RADIUS = 12;
 export const EGO_RADIUS = 16;

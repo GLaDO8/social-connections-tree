@@ -1,6 +1,6 @@
 # Phase 5: Polish + Edge Cases
 
-**Status**: not started
+**Status**: done
 **Spec refs**: [edge-cases](../specs/edge-cases.md)
 **Goal**: Handle edge cases, smooth animations, polished empty state.
 

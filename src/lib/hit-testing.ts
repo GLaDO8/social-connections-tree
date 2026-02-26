@@ -2,7 +2,7 @@ import { type Quadtree, quadtree } from "d3-quadtree";
 import type { Person, Relationship } from "@/types/graph";
 import { EGO_RADIUS, NODE_RADIUS } from "./graph-constants";
 
-const EDGE_HIT_THRESHOLD = 8;
+const EDGE_HIT_THRESHOLD = 5;
 
 // ---------------------------------------------------------------------------
 // Cached quadtree — rebuilt only when invalidateHitTestCache() is called

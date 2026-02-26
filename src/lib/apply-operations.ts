@@ -1,12 +1,7 @@
-import { DEFAULT_BOND_STRENGTHS } from "@/lib/graph-constants";
 import type { GraphAction } from "@/lib/graph-reducer";
 import { graphReducer } from "@/lib/graph-reducer";
-import {
-	DEFAULT_COHORT_COLORS,
-	getRelationshipCategory,
-} from "@/lib/graph-utils";
+import { DEFAULT_COHORT_COLORS } from "@/lib/graph-utils";
 import type {
-	BondStrength,
 	Cohort,
 	Person,
 	RelationshipType,
@@ -66,8 +61,6 @@ export function generateCohortCompletionActions(
 	const cohort = state.cohorts.find((c) => c.id === cohortId);
 	const cohortName = cohort?.name ?? "";
 	const relType = inferRelationshipTypeFromCohort(cohortName);
-	const bondStrength: BondStrength = DEFAULT_BOND_STRENGTHS[relType];
-	const category = getRelationshipCategory(relType);
 	const label = cohortName.toLowerCase();
 
 	const actions: GraphAction[] = [];
@@ -89,9 +82,7 @@ export function generateCohortCompletionActions(
 						sourceId: a.id,
 						targetId: b.id,
 						type: relType,
-						category,
 						label,
-						bondStrength,
 					},
 				});
 			}
@@ -245,10 +236,7 @@ export function resolveOperations(
 						sourceId: source.id,
 						targetId: target.id,
 						type: op.data.type,
-						category: getRelationshipCategory(op.data.type),
 						label: op.data.label,
-						bondStrength:
-							op.data.bondStrength ?? DEFAULT_BOND_STRENGTHS[op.data.type],
 						...(op.data.notes && { notes: op.data.notes }),
 					},
 				});
@@ -284,11 +272,8 @@ export function resolveOperations(
 				const updates: Partial<typeof rel> = {};
 				if (op.data.updates.type) {
 					updates.type = op.data.updates.type;
-					updates.category = getRelationshipCategory(op.data.updates.type);
 				}
 				if (op.data.updates.label) updates.label = op.data.updates.label;
-				if (op.data.updates.bondStrength)
-					updates.bondStrength = op.data.updates.bondStrength;
 				if (op.data.updates.notes !== undefined)
 					updates.notes = op.data.updates.notes;
 				act({
