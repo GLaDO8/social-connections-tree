@@ -214,8 +214,11 @@ function ChatMode({
 	onSubmit: (e?: React.FormEvent) => void;
 }) {
 	const { state } = useGraph();
+	const [hasMounted, setHasMounted] = useState(false);
+	useEffect(() => setHasMounted(true), []);
 	const isEmptyGraph = state.persons.length <= 1;
-	const showExamplePrompts = messages.length === 0 && isEmptyGraph;
+	const showExamplePrompts =
+		hasMounted && messages.length === 0 && isEmptyGraph;
 
 	return (
 		<>

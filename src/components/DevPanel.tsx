@@ -14,7 +14,17 @@ function loadPersistedSettings(): DevSettings {
 		if (raw) {
 			const parsed = JSON.parse(raw);
 			if (typeof parsed === "object" && parsed !== null) {
-				return { ...DEV_SETTINGS_DEFAULTS, ...parsed };
+				// Validate each field matches the expected type from defaults
+				// to prevent corrupted values (e.g. null from NaN serialization)
+				// from breaking DialKit's slider tuple detection
+				const validated: Record<string, unknown> = {};
+				for (const [key, defaultVal] of Object.entries(DEV_SETTINGS_DEFAULTS)) {
+					const saved = parsed[key];
+					if (saved !== undefined && typeof saved === typeof defaultVal) {
+						validated[key] = saved;
+					}
+				}
+				return { ...DEV_SETTINGS_DEFAULTS, ...validated };
 			}
 		}
 	} catch {
@@ -45,7 +55,7 @@ function DevPanelInner({
 	onSettingsRef,
 	onReset,
 }: DevPanelInnerProps) {
-	const persisted = useRef(loadPersistedSettings()).current;
+	const [persisted] = useState(loadPersistedSettings);
 	const settingsRef = useRef<DevSettings>({ ...persisted });
 
 	// Expose settings ref to parent on mount
