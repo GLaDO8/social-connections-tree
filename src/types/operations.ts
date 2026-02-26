@@ -9,7 +9,7 @@ export type GraphOperation =
 				targetName: string;
 				type: RelationshipType;
 				label: string;
-				bondStrength: BondStrength;
+				bondStrength?: BondStrength;
 				notes?: string;
 			};
 	  }

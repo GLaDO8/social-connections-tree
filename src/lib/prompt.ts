@@ -3,7 +3,8 @@
  *
  * Tool schemas handle structure and field constraints.
  * This prompt focuses on domain judgment: WHEN to call each tool,
- * HOW to infer relationship types and bond strengths, and ordering rules.
+ * HOW to infer relationship types, and ordering rules.
+ * Bond strength is defaulted client-side from the relationship type.
  */
 const SYSTEM_PROMPT = `You parse natural language into social graph operations using the provided tools.
 
@@ -23,16 +24,16 @@ RULES:
 - If the user says something conversational (greeting, question, etc.) with no graph intent, respond with text only — do NOT call any tools
 
 INFERENCE:
-- "close" / "very close" → close_friend, bondStrength 4
-- "best friend" → best_friend, bondStrength 5
-- "childhood" → childhood_friend, bondStrength 3
-- "college" / "school" / "class" → classmate, bondStrength 2 (unless "friend" is mentioned → friend, bondStrength 3)
-- "work" / "office" → colleague, bondStrength 2
-- "roommate" → roommate, bondStrength 3
-- "partner" / "dating" / "relationship" → partner, bondStrength 5
-- "family" / "parent" / "cousin" → family, bondStrength 4
-- "brother" / "sister" → sibling, bondStrength 4
-- Default: friend, bondStrength 3
+- "close" / "very close" → close_friend
+- "best friend" → best_friend
+- "childhood" → childhood_friend
+- "college" / "school" / "class" → classmate (unless "friend" is mentioned → friend)
+- "work" / "office" → colleague
+- "roommate" → roommate
+- "partner" / "dating" / "relationship" → partner
+- "family" / "parent" / "cousin" → family
+- "brother" / "sister" → sibling
+- Default: friend
 
 LABEL: Write a short natural phrase for the edge label (e.g., "childhood friend from FIITJEE", "college roommate").
 

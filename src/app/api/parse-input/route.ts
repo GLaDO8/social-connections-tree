@@ -55,7 +55,7 @@ const GraphOperationSchema = z.discriminatedUnion("op", [
 			targetName: z.string(),
 			type: RelationshipTypeEnum,
 			label: z.string(),
-			bondStrength: BondStrengthEnum,
+			bondStrength: BondStrengthEnum.optional(),
 			notes: z.string().optional(),
 		}),
 	}),
@@ -171,20 +171,13 @@ const tools: Anthropic.Tool[] = [
 					description:
 						"Short natural phrase for edge hover (e.g. 'childhood friend from FIITJEE')",
 				},
-				bondStrength: {
-					type: "integer",
-					description:
-						"1=distant, 2=casual, 3=moderate, 4=close, 5=inseparable",
-					minimum: 1,
-					maximum: 5,
-				},
 				notes: {
 					type: "string",
 					description:
 						"Contextual details or backstory about the relationship (how/when they met, anecdotes). Only populate when user provides such context.",
 				},
 			},
-			required: ["sourceName", "targetName", "type", "label", "bondStrength"],
+			required: ["sourceName", "targetName", "type", "label"],
 		},
 	},
 	{
@@ -306,7 +299,6 @@ function toolCallToOperation(toolName: string, input: ToolInput): any {
 					targetName: input.targetName!,
 					type: input.type!,
 					label: input.label!,
-					bondStrength: input.bondStrength!,
 					...(input.notes && { notes: input.notes }),
 				},
 			};

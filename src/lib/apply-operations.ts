@@ -247,7 +247,8 @@ export function resolveOperations(
 						type: op.data.type,
 						category: getRelationshipCategory(op.data.type),
 						label: op.data.label,
-						bondStrength: op.data.bondStrength,
+						bondStrength:
+							op.data.bondStrength ?? DEFAULT_BOND_STRENGTHS[op.data.type],
 						...(op.data.notes && { notes: op.data.notes }),
 					},
 				});
