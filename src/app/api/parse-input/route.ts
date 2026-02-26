@@ -1,20 +1,18 @@
-import { GoogleGenAI } from "@google/genai";
+import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { buildSystemPrompt } from "@/lib/prompt";
 
-let _ai: GoogleGenAI | null = null;
-function getAI(): GoogleGenAI {
-	if (!_ai) {
-		_ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let _client: Anthropic | null = null;
+function getClient(): Anthropic {
+	if (!_client) {
+		_client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 	}
-	return _ai;
+	return _client;
 }
 
 // ---------------------------------------------------------------------------
-// Zod schema with .describe() — drives both Gemini's constrained decoding
-// and our response validation.
+// Zod schema — used for validation AFTER Claude responds.
 // ---------------------------------------------------------------------------
 
 const RelationshipTypeEnum = z.enum([
@@ -34,118 +32,74 @@ const RelationshipTypeEnum = z.enum([
 	"other",
 ]);
 
-const BondStrength = z
-	.number()
-	.int()
-	.min(1)
-	.max(5)
-	.describe("1=distant, 2=casual, 3=moderate, 4=close, 5=inseparable");
-
-const AddPersonOp = z.object({
-	op: z.literal("add_person").describe("Add a new person to the graph"),
-	data: z.object({
-		name: z.string().describe("Person's display name"),
-		cohortNames: z
-			.array(z.string())
-			.describe(
-				"Group names this person belongs to (e.g. FIITJEE, College). Omit if none.",
-			)
-			.optional(),
-	}),
-});
-
-const AddRelationshipOp = z.object({
-	op: z
-		.literal("add_relationship")
-		.describe("Create an edge between two people"),
-	data: z.object({
-		sourceName: z.string().describe('First person. Use "Me" for the ego node.'),
-		targetName: z.string().describe("Second person"),
-		type: RelationshipTypeEnum.describe("Relationship category"),
-		label: z
-			.string()
-			.describe(
-				"Short natural phrase shown on hover (e.g. 'childhood friend from FIITJEE')",
-			),
-		bondStrength: BondStrength,
-	}),
-});
-
-const AddCohortOp = z.object({
-	op: z.literal("add_cohort").describe("Create a new group/cohort"),
-	data: z.object({
-		name: z
-			.string()
-			.describe("Cohort display name (e.g. FIITJEE, College, Work)"),
-	}),
-});
-
-const UpdatePersonOp = z.object({
-	op: z.literal("update_person").describe("Modify an existing person"),
-	data: z.object({
-		name: z.string().describe("Current name of the person to update"),
-		updates: z.object({
-			name: z.string().describe("New name").optional(),
-			notes: z.string().describe("Notes about the person").optional(),
-		}),
-	}),
-});
-
-const UpdateRelationshipOp = z.object({
-	op: z
-		.literal("update_relationship")
-		.describe("Modify an existing relationship"),
-	data: z.object({
-		sourceName: z.string().describe("First person in the relationship"),
-		targetName: z.string().describe("Second person in the relationship"),
-		updates: z.object({
-			type: RelationshipTypeEnum.describe("New relationship type").optional(),
-			label: z.string().describe("New edge label").optional(),
-			bondStrength: BondStrength.optional(),
-		}),
-	}),
-});
-
-const RemovePersonOp = z.object({
-	op: z
-		.literal("remove_person")
-		.describe("Delete a person and all their connections"),
-	data: z.object({
-		name: z.string().describe("Name of the person to remove"),
-	}),
-});
-
-const RemoveRelationshipOp = z.object({
-	op: z
-		.literal("remove_relationship")
-		.describe("Delete a connection between two people"),
-	data: z.object({
-		sourceName: z.string().describe("First person"),
-		targetName: z.string().describe("Second person"),
-	}),
-});
+const BondStrengthEnum = z.union([
+	z.literal(1),
+	z.literal(2),
+	z.literal(3),
+	z.literal(4),
+	z.literal(5),
+]);
 
 const GraphOperationSchema = z.discriminatedUnion("op", [
-	AddPersonOp,
-	AddRelationshipOp,
-	AddCohortOp,
-	UpdatePersonOp,
-	UpdateRelationshipOp,
-	RemovePersonOp,
-	RemoveRelationshipOp,
+	z.object({
+		op: z.literal("add_person"),
+		data: z.object({
+			name: z.string(),
+			cohortNames: z.array(z.string()).optional(),
+		}),
+	}),
+	z.object({
+		op: z.literal("add_relationship"),
+		data: z.object({
+			sourceName: z.string(),
+			targetName: z.string(),
+			type: RelationshipTypeEnum,
+			label: z.string(),
+			bondStrength: BondStrengthEnum,
+		}),
+	}),
+	z.object({
+		op: z.literal("add_cohort"),
+		data: z.object({ name: z.string() }),
+	}),
+	z.object({
+		op: z.literal("update_person"),
+		data: z.object({
+			name: z.string(),
+			updates: z.object({
+				name: z.string().optional(),
+				notes: z.string().optional(),
+			}),
+		}),
+	}),
+	z.object({
+		op: z.literal("update_relationship"),
+		data: z.object({
+			sourceName: z.string(),
+			targetName: z.string(),
+			updates: z.object({
+				type: RelationshipTypeEnum.optional(),
+				label: z.string().optional(),
+				bondStrength: BondStrengthEnum.optional(),
+			}),
+		}),
+	}),
+	z.object({
+		op: z.literal("remove_person"),
+		data: z.object({ name: z.string() }),
+	}),
+	z.object({
+		op: z.literal("remove_relationship"),
+		data: z.object({
+			sourceName: z.string(),
+			targetName: z.string(),
+		}),
+	}),
 ]);
 
 const ResponseSchema = z.object({
-	operations: z
-		.array(GraphOperationSchema)
-		.describe(
-			"Ordered list: add_cohort first, then add_person, then add_relationship, then updates/removes",
-		),
-	explanation: z
-		.string()
-		.describe(
-			"Brief, friendly confirmation of what was done. Conversational tone, not technical.",
-		),
+	operations: z.array(GraphOperationSchema),
+	explanation: z.string(),
 });
 
 const RequestSchema = z.object({
@@ -154,11 +108,242 @@ const RequestSchema = z.object({
 	existingCohortNames: z.array(z.string()),
 });
 
-// Convert Zod schema → JSON Schema for Gemini's constrained decoding
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod 4 type compat with zod-to-json-schema
-const responseJsonSchema = zodToJsonSchema(ResponseSchema as any, {
-	$refStrategy: "none",
-});
+// ---------------------------------------------------------------------------
+// Tool definitions — each graph operation is its own tool with a flat schema.
+// ---------------------------------------------------------------------------
+
+const RELATIONSHIP_TYPES = [
+	"friend",
+	"close_friend",
+	"best_friend",
+	"childhood_friend",
+	"partner",
+	"ex",
+	"crush",
+	"colleague",
+	"classmate",
+	"roommate",
+	"family",
+	"sibling",
+	"acquaintance",
+	"other",
+] as const;
+
+const tools: Anthropic.Tool[] = [
+	{
+		name: "add_person",
+		description: "Add a new person to the social graph.",
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				name: { type: "string", description: "Person's name" },
+				cohortNames: {
+					type: "array",
+					items: { type: "string" },
+					description:
+						"Group names this person belongs to (e.g. ['FIITJEE', 'College'])",
+				},
+			},
+			required: ["name"],
+		},
+	},
+	{
+		name: "add_relationship",
+		description:
+			'Add a relationship between two people. Use "Me" for the ego node.',
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				sourceName: {
+					type: "string",
+					description: 'First person. Use "Me" for the ego node.',
+				},
+				targetName: { type: "string", description: "Second person" },
+				type: {
+					type: "string",
+					enum: RELATIONSHIP_TYPES,
+					description: "Relationship type",
+				},
+				label: {
+					type: "string",
+					description:
+						"Short natural phrase for edge hover (e.g. 'childhood friend from FIITJEE')",
+				},
+				bondStrength: {
+					type: "integer",
+					description:
+						"1=distant, 2=casual, 3=moderate, 4=close, 5=inseparable",
+					minimum: 1,
+					maximum: 5,
+				},
+			},
+			required: ["sourceName", "targetName", "type", "label", "bondStrength"],
+		},
+	},
+	{
+		name: "add_cohort",
+		description: "Add a new cohort/group to the social graph.",
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				name: { type: "string", description: "Cohort/group name" },
+			},
+			required: ["name"],
+		},
+	},
+	{
+		name: "update_person",
+		description: "Update an existing person's details.",
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				name: {
+					type: "string",
+					description: "Current name of the person to update",
+				},
+				newName: {
+					type: "string",
+					description: "New name for the person (if renaming)",
+				},
+				notes: { type: "string", description: "Notes about the person" },
+			},
+			required: ["name"],
+		},
+	},
+	{
+		name: "update_relationship",
+		description: "Update an existing relationship between two people.",
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				sourceName: { type: "string", description: "First person" },
+				targetName: { type: "string", description: "Second person" },
+				type: {
+					type: "string",
+					enum: RELATIONSHIP_TYPES,
+					description: "New relationship type",
+				},
+				label: { type: "string", description: "New edge label" },
+				bondStrength: {
+					type: "integer",
+					description: "New bond strength (1-5)",
+					minimum: 1,
+					maximum: 5,
+				},
+			},
+			required: ["sourceName", "targetName"],
+		},
+	},
+	{
+		name: "remove_person",
+		description: "Remove a person from the social graph.",
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				name: { type: "string", description: "Name of the person to remove" },
+			},
+			required: ["name"],
+		},
+	},
+	{
+		name: "remove_relationship",
+		description: "Remove a relationship between two people.",
+		input_schema: {
+			type: "object" as const,
+			properties: {
+				sourceName: { type: "string", description: "First person" },
+				targetName: { type: "string", description: "Second person" },
+			},
+			required: ["sourceName", "targetName"],
+		},
+	},
+];
+
+// ---------------------------------------------------------------------------
+// Transform tool calls → GraphOperation format
+// ---------------------------------------------------------------------------
+
+interface ToolInput {
+	name?: string;
+	cohortNames?: string[];
+	sourceName?: string;
+	targetName?: string;
+	type?: string;
+	label?: string;
+	bondStrength?: number;
+	newName?: string;
+	notes?: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toolCallToOperation(toolName: string, input: ToolInput): any {
+	switch (toolName) {
+		case "add_person":
+			return {
+				op: "add_person",
+				data: {
+					name: input.name!,
+					...(input.cohortNames && { cohortNames: input.cohortNames }),
+				},
+			};
+		case "add_relationship":
+			return {
+				op: "add_relationship",
+				data: {
+					sourceName: input.sourceName!,
+					targetName: input.targetName!,
+					type: input.type!,
+					label: input.label!,
+					bondStrength: input.bondStrength!,
+				},
+			};
+		case "add_cohort":
+			return { op: "add_cohort", data: { name: input.name! } };
+		case "update_person": {
+			const updates: { name?: string; notes?: string } = {};
+			if (input.newName) updates.name = input.newName;
+			if (input.notes) updates.notes = input.notes;
+			return {
+				op: "update_person",
+				data: { name: input.name!, updates },
+			};
+		}
+		case "update_relationship": {
+			const updates: {
+				type?: string;
+				label?: string;
+				bondStrength?: number;
+			} = {};
+			if (input.type) updates.type = input.type;
+			if (input.label) updates.label = input.label;
+			if (input.bondStrength) updates.bondStrength = input.bondStrength;
+			return {
+				op: "update_relationship",
+				data: {
+					sourceName: input.sourceName!,
+					targetName: input.targetName!,
+					updates,
+				},
+			};
+		}
+		case "remove_person":
+			return { op: "remove_person", data: { name: input.name! } };
+		case "remove_relationship":
+			return {
+				op: "remove_relationship",
+				data: {
+					sourceName: input.sourceName!,
+					targetName: input.targetName!,
+				},
+			};
+		default:
+			throw new Error(`Unknown tool: ${toolName}`);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
 
 export async function POST(request: Request) {
 	try {
@@ -177,28 +362,36 @@ export async function POST(request: Request) {
 			existingCohortNames,
 		);
 
-		const response = await getAI().models.generateContent({
-			model: "gemini-3-flash-preview",
-			contents: input,
-			config: {
-				systemInstruction: systemPrompt,
-				responseMimeType: "application/json",
-				responseJsonSchema,
-			},
+		const response = await getClient().messages.create({
+			model: "claude-haiku-4-5-20251001",
+			max_tokens: 1024,
+			system: systemPrompt,
+			tools,
+			messages: [{ role: "user", content: input }],
 		});
 
-		const text = response.text;
-		if (!text) {
-			return NextResponse.json(
-				{ error: "No response from model" },
-				{ status: 500 },
-			);
-		}
+		// Extract text blocks → explanation
+		const textBlocks = response.content.filter(
+			(b): b is Anthropic.TextBlock => b.type === "text",
+		);
+		const explanation = textBlocks.map((b) => b.text).join(" ") || "Done.";
 
-		const jsonData = JSON.parse(text);
-		const result = ResponseSchema.safeParse(jsonData);
+		// Extract tool_use blocks → operations
+		const toolUseBlocks = response.content.filter(
+			(b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+		);
+		const operations = toolUseBlocks.map((b) =>
+			toolCallToOperation(b.name, b.input as ToolInput),
+		);
+
+		// Validate with Zod
+		const result = ResponseSchema.safeParse({ operations, explanation });
 		if (!result.success) {
 			console.error("Validation failed:", result.error.flatten());
+			console.error(
+				"Raw Claude output:",
+				JSON.stringify(response.content, null, 2),
+			);
 			return NextResponse.json(
 				{ error: "Invalid model output", details: result.error.flatten() },
 				{ status: 500 },

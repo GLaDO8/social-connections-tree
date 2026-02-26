@@ -18,7 +18,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useGraph } from "@/context/GraphContext";
-import { applyOperations } from "@/lib/apply-operations";
+import { resolveOperations } from "@/lib/apply-operations";
 import { RELATIONSHIP_TYPES } from "@/lib/graph-constants";
 import {
 	getDefaultBondStrength,
@@ -36,7 +36,7 @@ interface ChatMessage {
 }
 
 export default function ChatInput() {
-	const { state, dispatch } = useGraph();
+	const { state, batchDispatch } = useGraph();
 	const [mode, setMode] = useState<InputMode>("chat");
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
@@ -98,8 +98,9 @@ export default function ChatInput() {
 
 				const data: ParseInputResponse = await res.json();
 
-				// Apply operations to graph
-				applyOperations(data.operations, state, dispatch);
+				// Apply operations to graph (batched = one undo step)
+				const actions = resolveOperations(data.operations, state);
+				batchDispatch(actions);
 
 				// Replace loading message with explanation
 				setMessages((prev) =>
@@ -124,7 +125,7 @@ export default function ChatInput() {
 				inputRef.current?.focus();
 			}
 		},
-		[input, loading, state, dispatch],
+		[input, loading, state, batchDispatch],
 	);
 
 	return (

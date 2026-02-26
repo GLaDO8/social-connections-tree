@@ -1,16 +1,26 @@
 "use client";
 
 import { select } from "d3-selection";
-import { zoom as d3Zoom, type ZoomBehavior } from "d3-zoom";
+import { zoom as d3Zoom, type ZoomBehavior, zoomIdentity } from "d3-zoom";
 import { useCallback, useEffect, useRef, useState } from "react";
+import CanvasToolbar from "@/components/CanvasToolbar";
+import ContextMenu from "@/components/ContextMenu";
 import { useGraph } from "@/context/GraphContext";
 import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
 import { useForceSimulation } from "@/hooks/useForceSimulation";
 import { render } from "@/lib/canvas-renderer";
 import type { ForceSimulation } from "@/lib/force-config";
+import { hitTestEdge, hitTestNode } from "@/lib/hit-testing";
 
 interface GraphCanvasProps {
 	onSimulationReady?: (ref: React.RefObject<ForceSimulation | null>) => void;
+}
+
+interface ContextMenuState {
+	x: number;
+	y: number;
+	nodeId: string | null;
+	edgeId: string | null;
 }
 
 export default function GraphCanvas({
@@ -28,6 +38,16 @@ export default function GraphCanvas({
 	const transformRef = useRef({ x: 0, y: 0, k: 1 });
 	const sizeRef = useRef({ width: 0, height: 0 });
 	const rafRef = useRef<number | null>(null);
+	const zoomBehaviorRef = useRef<ZoomBehavior<
+		HTMLCanvasElement,
+		unknown
+	> | null>(null);
+	const selectionRef = useRef<ReturnType<
+		typeof select<HTMLCanvasElement, unknown>
+	> | null>(null);
+
+	// Context menu state
+	const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
 	// Keep render data in refs so scheduleRender can be stable (no stale closures)
 	const stateRef = useRef(state);
@@ -129,11 +149,51 @@ export default function GraphCanvas({
 		selection.call(zoomBehavior);
 		selection.on("dblclick.zoom", null);
 
+		zoomBehaviorRef.current = zoomBehavior;
+		selectionRef.current = selection;
+
 		return () => {
 			selection.on(".drag", null);
 			selection.on(".zoom", null);
+			zoomBehaviorRef.current = null;
+			selectionRef.current = null;
 		};
 	}, [scheduleRender, dragBehavior]);
+
+	// Right-click → context menu
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) return;
+
+		function handleContextMenu(e: MouseEvent) {
+			e.preventDefault();
+			const rect = canvas?.getBoundingClientRect();
+			if (!rect) return;
+			const t = transformRef.current;
+			const cx = (e.clientX - rect.left - t.x) / t.k;
+			const cy = (e.clientY - rect.top - t.y) / t.k;
+
+			const s = stateRef.current;
+			const hitNode = hitTestNode(s.persons, cx, cy);
+			const hitEdge = hitNode
+				? null
+				: hitTestEdge(s.relationships, s.persons, cx, cy);
+
+			if (hitNode || hitEdge) {
+				setContextMenu({
+					x: e.clientX,
+					y: e.clientY,
+					nodeId: hitNode?.id ?? null,
+					edgeId: hitEdge?.id ?? null,
+				});
+			} else {
+				setContextMenu(null);
+			}
+		}
+
+		canvas.addEventListener("contextmenu", handleContextMenu);
+		return () => canvas.removeEventListener("contextmenu", handleContextMenu);
+	}, []);
 
 	// Handle DPR for sharp rendering
 	useEffect(() => {
@@ -149,6 +209,62 @@ export default function GraphCanvas({
 		scheduleRender();
 	}, [width, height, scheduleRender]);
 
+	// Zoom toolbar callbacks
+	const handleZoomIn = useCallback(() => {
+		const sel = selectionRef.current;
+		const zb = zoomBehaviorRef.current;
+		if (sel && zb) {
+			zb.scaleBy(sel, 1.3);
+		}
+	}, []);
+
+	const handleZoomOut = useCallback(() => {
+		const sel = selectionRef.current;
+		const zb = zoomBehaviorRef.current;
+		if (sel && zb) {
+			zb.scaleBy(sel, 1 / 1.3);
+		}
+	}, []);
+
+	const handleFitToScreen = useCallback(() => {
+		const sel = selectionRef.current;
+		const zb = zoomBehaviorRef.current;
+		const persons = stateRef.current.persons;
+		if (!sel || !zb || persons.length === 0) return;
+
+		const w = sizeRef.current.width;
+		const h = sizeRef.current.height;
+		if (w === 0 || h === 0) return;
+
+		// Compute bounding box of all nodes
+		let minX = Infinity;
+		let maxX = -Infinity;
+		let minY = Infinity;
+		let maxY = -Infinity;
+		for (const p of persons) {
+			const px = p.x ?? 0;
+			const py = p.y ?? 0;
+			if (px < minX) minX = px;
+			if (px > maxX) maxX = px;
+			if (py < minY) minY = py;
+			if (py > maxY) maxY = py;
+		}
+
+		const padding = 60;
+		const bw = maxX - minX + padding * 2;
+		const bh = maxY - minY + padding * 2;
+		const scale = Math.min(w / bw, h / bh, 2);
+		const cx = (minX + maxX) / 2;
+		const cy = (minY + maxY) / 2;
+
+		const transform = zoomIdentity
+			.translate(w / 2, h / 2)
+			.scale(scale)
+			.translate(-cx, -cy);
+
+		zb.transform(sel, transform);
+	}, []);
+
 	// Resolve hovered node data for tooltip
 	const hoveredNode = hoveredNodeId
 		? (state.persons.find((p) => p.id === hoveredNodeId) ?? null)
@@ -156,10 +272,6 @@ export default function GraphCanvas({
 	const hoveredNodeCohort = hoveredNode?.cohortIds[0]
 		? state.cohorts.find((c) => c.id === hoveredNode.cohortIds[0])
 		: null;
-
-	// Find edge under cursor for edge tooltip (via hovered edge tracking)
-	// Edge hover tooltip is shown via the properties panel on selection, not on hover.
-	// Node hover tooltip shown below.
 
 	return (
 		<div className="relative w-full h-full">
@@ -186,6 +298,20 @@ export default function GraphCanvas({
 						<span className="ml-1.5 opacity-70">{hoveredNodeCohort.name}</span>
 					)}
 				</div>
+			)}
+			<CanvasToolbar
+				onZoomIn={handleZoomIn}
+				onZoomOut={handleZoomOut}
+				onFitToScreen={handleFitToScreen}
+			/>
+			{contextMenu && (
+				<ContextMenu
+					x={contextMenu.x}
+					y={contextMenu.y}
+					nodeId={contextMenu.nodeId}
+					edgeId={contextMenu.edgeId}
+					onClose={() => setContextMenu(null)}
+				/>
 			)}
 		</div>
 	);

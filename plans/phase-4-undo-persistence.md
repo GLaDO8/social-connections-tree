@@ -1,6 +1,6 @@
 # Phase 4: Undo/Redo + Persistence
 
-**Status**: not started
+**Status**: done
 **Spec refs**: [undo-redo](../specs/undo-redo.md)
 **Goal**: Data survives refresh, undo/redo works, export/import supported.
 

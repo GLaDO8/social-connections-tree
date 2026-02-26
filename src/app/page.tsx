@@ -6,6 +6,7 @@ import CohortManager from "@/components/CohortManager";
 import DevPanel from "@/components/DevPanel";
 import GraphCanvas from "@/components/GraphCanvas";
 import Header from "@/components/Header";
+import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { GraphProvider } from "@/context/GraphContext";
 import type { ForceSimulation } from "@/lib/force-config";
@@ -37,6 +38,7 @@ export default function Home() {
 
 	return (
 		<GraphProvider>
+			<KeyboardShortcuts />
 			<div className="h-screen w-screen flex flex-col overflow-hidden bg-gray-950">
 				<Header onSettingsClick={() => setCohortManagerOpen(true)} />
 				<div className="flex-1 relative">

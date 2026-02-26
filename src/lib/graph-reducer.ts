@@ -5,7 +5,7 @@ import type { Cohort, Person, Relationship, SocialGraph } from "@/types/graph";
 // ---------------------------------------------------------------------------
 
 export type GraphAction =
-	| { type: "ADD_PERSON"; payload: Omit<Person, "id"> }
+	| { type: "ADD_PERSON"; payload: Omit<Person, "id"> & { id?: string } }
 	| { type: "REMOVE_PERSON"; payload: { id: string } }
 	| { type: "UPDATE_PERSON"; payload: { id: string } & Partial<Person> }
 	| { type: "ADD_RELATIONSHIP"; payload: Omit<Relationship, "id"> }
@@ -21,10 +21,11 @@ export type GraphAction =
 				relationship: Omit<Relationship, "id" | "sourceId">;
 			};
 	  }
-	| { type: "ADD_COHORT"; payload: Omit<Cohort, "id"> }
+	| { type: "ADD_COHORT"; payload: Omit<Cohort, "id"> & { id?: string } }
 	| { type: "UPDATE_COHORT"; payload: { id: string } & Partial<Cohort> }
 	| { type: "REMOVE_COHORT"; payload: { id: string } }
-	| { type: "SET_ACTIVE_COHORT"; payload: { id: string | null } };
+	| { type: "SET_ACTIVE_COHORT"; payload: { id: string | null } }
+	| { type: "RESTORE_SNAPSHOT"; payload: SocialGraph };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,9 +78,10 @@ export function graphReducer(
 ): SocialGraph {
 	switch (action.type) {
 		case "ADD_PERSON": {
+			const { id: providedId, ...rest } = action.payload;
 			const person: Person = {
-				...action.payload,
-				id: crypto.randomUUID(),
+				...rest,
+				id: providedId ?? crypto.randomUUID(),
 			};
 			return withTimestamp({
 				...state,
@@ -153,9 +155,10 @@ export function graphReducer(
 		}
 
 		case "ADD_COHORT": {
+			const { id: providedId, ...rest } = action.payload;
 			const cohort: Cohort = {
-				...action.payload,
-				id: crypto.randomUUID(),
+				...rest,
+				id: providedId ?? crypto.randomUUID(),
 			};
 			return withTimestamp({
 				...state,
@@ -192,6 +195,10 @@ export function graphReducer(
 				...state,
 				activeCohortId: action.payload.id,
 			};
+		}
+
+		case "RESTORE_SNAPSHOT": {
+			return action.payload;
 		}
 
 		default: {

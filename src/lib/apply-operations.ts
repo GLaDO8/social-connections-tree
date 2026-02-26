@@ -3,7 +3,7 @@ import {
 	DEFAULT_COHORT_COLORS,
 	getRelationshipCategory,
 } from "@/lib/graph-utils";
-import type { Person, SocialGraph } from "@/types/graph";
+import type { Cohort, Person, SocialGraph } from "@/types/graph";
 import type { GraphOperation } from "@/types/operations";
 
 /**
@@ -29,40 +29,37 @@ function findCohortByName(
 }
 
 /**
- * Apply a list of graph operations (from NL parse) to the graph
- * by dispatching reducer actions. Resolves names → IDs, auto-creates
- * missing persons/cohorts.
- *
- * Returns the list of dispatched actions for debugging.
+ * Resolve a list of graph operations (from NL parse) into reducer actions.
+ * Resolves names → IDs, auto-creates missing persons/cohorts.
+ * Does NOT dispatch — returns the list of actions for the caller to batch.
  */
-export function applyOperations(
+export function resolveOperations(
 	operations: GraphOperation[],
 	state: SocialGraph,
-	dispatch: React.Dispatch<GraphAction>,
 ): GraphAction[] {
 	const actions: GraphAction[] = [];
-	// Track state locally so subsequent ops see prior additions
 	let currentState = state;
 
 	function act(action: GraphAction) {
 		actions.push(action);
-		dispatch(action);
-		// Optimistically track additions in local state for name resolution
-		if (action.type === "ADD_PERSON") {
+		// Track additions in local state for name resolution by subsequent ops.
+		// Use the same ID we pass to the reducer so relationships reference
+		// the correct person/cohort.
+		if (action.type === "ADD_PERSON" && action.payload.id) {
 			currentState = {
 				...currentState,
 				persons: [
 					...currentState.persons,
-					{ ...action.payload, id: `pending-${Date.now()}-${Math.random()}` },
+					{ ...action.payload, id: action.payload.id } as Person,
 				],
 			};
 		}
-		if (action.type === "ADD_COHORT") {
+		if (action.type === "ADD_COHORT" && action.payload.id) {
 			currentState = {
 				...currentState,
 				cohorts: [
 					...currentState.cohorts,
-					{ ...action.payload, id: `pending-${Date.now()}-${Math.random()}` },
+					{ ...action.payload, id: action.payload.id } as Cohort,
 				],
 			};
 		}
@@ -79,7 +76,7 @@ export function applyOperations(
 						];
 					act({
 						type: "ADD_COHORT",
-						payload: { name: op.data.name, color },
+						payload: { id: crypto.randomUUID(), name: op.data.name, color },
 					});
 				}
 				break;
@@ -114,6 +111,7 @@ export function applyOperations(
 				act({
 					type: "ADD_PERSON",
 					payload: {
+						id: crypto.randomUUID(),
 						name: op.data.name,
 						cohortIds,
 						isEgo: false,
