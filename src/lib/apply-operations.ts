@@ -121,15 +121,35 @@ export function resolveOperations(
 			}
 
 			case "add_relationship": {
-				const source = findPersonByName(
-					currentState.persons,
-					op.data.sourceName,
-				);
-				const target = findPersonByName(
-					currentState.persons,
-					op.data.targetName,
-				);
-				if (!source || !target) break; // skip if names unresolved
+				// Auto-create missing persons referenced in relationships.
+				// Claude may omit add_person for people not directly connected to "Me".
+				let source = findPersonByName(currentState.persons, op.data.sourceName);
+				if (!source && op.data.sourceName.toLowerCase() !== "me") {
+					act({
+						type: "ADD_PERSON",
+						payload: {
+							id: crypto.randomUUID(),
+							name: op.data.sourceName,
+							cohortIds: [],
+							isEgo: false,
+						},
+					});
+					source = findPersonByName(currentState.persons, op.data.sourceName);
+				}
+				let target = findPersonByName(currentState.persons, op.data.targetName);
+				if (!target && op.data.targetName.toLowerCase() !== "me") {
+					act({
+						type: "ADD_PERSON",
+						payload: {
+							id: crypto.randomUUID(),
+							name: op.data.targetName,
+							cohortIds: [],
+							isEgo: false,
+						},
+					});
+					target = findPersonByName(currentState.persons, op.data.targetName);
+				}
+				if (!source || !target) break;
 				// Check for duplicate
 				const duplicate = currentState.relationships.find(
 					(r) =>

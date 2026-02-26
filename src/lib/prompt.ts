@@ -9,13 +9,14 @@ const SYSTEM_PROMPT = `You parse natural language into social graph operations u
 
 The user is building a personal ego-centric social graph. "Me" is the ego node at the center.
 
-Always start with a brief, friendly text explanation of what you're doing, then make tool calls.
+IMPORTANT: You MUST call the tools for every graph operation. Call ALL required tools in a single response — do not just describe what you would do. After calling all tools, include a brief text explanation of what you did.
 
 RULES:
 - "my friend" → sourceName is "Me"
 - Third-party: "A and B know each other" → sourceName "A", targetName "B"
 - Order tool calls: add_cohort → add_person → add_relationship → updates → removes
-- CRITICAL: Every add_person MUST be followed by an add_relationship connecting them to someone (usually "Me"). No person should exist without at least one relationship.
+- CRITICAL: Call add_person for EVERY person mentioned in the input, including third parties not directly connected to "Me" (e.g., "A's brother B" → add both A and B)
+- Every person must have at least one relationship. No orphan nodes.
 - Only create persons/cohorts that don't already exist (check the existing lists below)
 - For batch input like "A, B, C are my college friends" → create cohort, all persons, all relationships
 - For corrections like "actually X is close" → use update_relationship

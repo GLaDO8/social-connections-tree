@@ -362,25 +362,51 @@ export async function POST(request: Request) {
 			existingCohortNames,
 		);
 
-		const response = await getClient().messages.create({
-			model: "claude-haiku-4-5-20251001",
-			max_tokens: 1024,
-			system: systemPrompt,
-			tools,
-			messages: [{ role: "user", content: input }],
-		});
+		// Multi-turn tool-use loop: collect all tool calls across turns.
+		// Claude may return stop_reason "tool_use" when it has more calls to make,
+		// so we feed back tool results and continue until it stops.
+		const allToolUseBlocks: Anthropic.ToolUseBlock[] = [];
+		const allTextBlocks: Anthropic.TextBlock[] = [];
+		const messages: Anthropic.MessageParam[] = [
+			{ role: "user", content: input },
+		];
 
-		// Extract text blocks → explanation
-		const textBlocks = response.content.filter(
-			(b): b is Anthropic.TextBlock => b.type === "text",
-		);
-		const explanation = textBlocks.map((b) => b.text).join(" ") || "Done.";
+		const MAX_TURNS = 5;
+		for (let turn = 0; turn < MAX_TURNS; turn++) {
+			const response = await getClient().messages.create({
+				model: "claude-haiku-4-5-20251001",
+				max_tokens: 4096,
+				system: systemPrompt,
+				tools,
+				messages,
+			});
 
-		// Extract tool_use blocks → operations
-		const toolUseBlocks = response.content.filter(
-			(b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
-		);
-		const operations = toolUseBlocks.map((b) =>
+			// Collect text and tool_use blocks from this turn
+			for (const block of response.content) {
+				if (block.type === "text") allTextBlocks.push(block);
+				if (block.type === "tool_use") allToolUseBlocks.push(block);
+			}
+
+			// If Claude is done (no more tool calls), break
+			if (response.stop_reason !== "tool_use") break;
+
+			// Build tool results and continue the conversation
+			const toolResults: Anthropic.ToolResultBlockParam[] = response.content
+				.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use")
+				.map((b) => ({
+					type: "tool_result" as const,
+					tool_use_id: b.id,
+					content: "OK",
+				}));
+
+			messages.push(
+				{ role: "assistant", content: response.content },
+				{ role: "user", content: toolResults },
+			);
+		}
+
+		const explanation = allTextBlocks.map((b) => b.text).join(" ") || "Done.";
+		const operations = allToolUseBlocks.map((b) =>
 			toolCallToOperation(b.name, b.input as ToolInput),
 		);
 
@@ -389,8 +415,12 @@ export async function POST(request: Request) {
 		if (!result.success) {
 			console.error("Validation failed:", result.error.flatten());
 			console.error(
-				"Raw Claude output:",
-				JSON.stringify(response.content, null, 2),
+				"Raw tool calls:",
+				JSON.stringify(
+					allToolUseBlocks.map((b) => ({ name: b.name, input: b.input })),
+					null,
+					2,
+				),
 			);
 			return NextResponse.json(
 				{ error: "Invalid model output", details: result.error.flatten() },
