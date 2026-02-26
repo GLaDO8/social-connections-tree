@@ -19,12 +19,6 @@ export interface Person {
 	fy?: number | null;
 }
 
-export type RelationshipCategory =
-	| "default"
-	| "romantic"
-	| "family"
-	| "professional";
-
 export type RelationshipType =
 	| "friend"
 	| "close_friend"
@@ -41,16 +35,12 @@ export type RelationshipType =
 	| "acquaintance"
 	| "other";
 
-export type BondStrength = 1 | 2 | 3 | 4 | 5;
-
 export interface Relationship {
 	id: string;
 	sourceId: string;
 	targetId: string;
 	type: RelationshipType;
-	category: RelationshipCategory;
-	label: string;
-	bondStrength: BondStrength;
+	label?: string;
 	notes?: string;
 }
 

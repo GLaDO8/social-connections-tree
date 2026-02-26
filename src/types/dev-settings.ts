@@ -1,4 +1,4 @@
-import type { RelationshipCategory } from "./graph";
+import type { RelationshipCategory } from "../lib/relationship-config";
 
 export interface DevSettings {
 	// Physics

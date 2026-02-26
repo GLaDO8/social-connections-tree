@@ -1,4 +1,4 @@
-import type { BondStrength, RelationshipType } from "./graph";
+import type { RelationshipType } from "./graph";
 
 export type GraphOperation =
 	| { op: "add_person"; data: { name: string; cohortNames?: string[] } }
@@ -8,8 +8,7 @@ export type GraphOperation =
 				sourceName: string;
 				targetName: string;
 				type: RelationshipType;
-				label: string;
-				bondStrength?: BondStrength;
+				label?: string;
 				notes?: string;
 			};
 	  }
@@ -26,7 +25,6 @@ export type GraphOperation =
 				updates: {
 					type?: RelationshipType;
 					label?: string;
-					bondStrength?: BondStrength;
 					notes?: string;
 				};
 			};

@@ -40,28 +40,20 @@ Interactive web app for ego-centric social connection graphs. Canvas + d3-force 
 ## Data Model
 
 ```typescript
-// src/types/graph.ts
+// src/types/graph.ts — core data (what gets persisted)
 
-interface Cohort {
-  id: string;
-  name: string;           // "FIITJEE Friends", "College Friends"
-  color: string;          // hex color
-}
+interface Cohort { id: string; name: string; color: string; }
 
 interface Person {
   id: string;
   name: string;
-  cohortIds: string[];    // can belong to multiple cohorts
-  isEgo: boolean;         // true for "me" node (center)
+  cohortIds: string[];
+  isEgo: boolean;
   notes?: string;
-  // d3-force mutates these in-place
-  x?: number; y?: number;
+  x?: number; y?: number;         // d3-force mutates in-place
   vx?: number; vy?: number;
-  fx?: number | null;     // fixed position (during drag or for ego node)
-  fy?: number | null;
+  fx?: number | null; fy?: number | null;
 }
-
-type RelationshipCategory = 'default' | 'romantic' | 'family' | 'professional';
 
 type RelationshipType =
   | 'friend' | 'close_friend' | 'best_friend' | 'childhood_friend'
@@ -70,25 +62,26 @@ type RelationshipType =
   | 'family' | 'sibling'
   | 'acquaintance' | 'other';
 
-type BondStrength = 1 | 2 | 3 | 4 | 5; // 1=distant, 5=inseparable
-
 interface Relationship {
   id: string;
   sourceId: string;
   targetId: string;
   type: RelationshipType;
-  category: RelationshipCategory; // determines edge color
-  label: string;                  // display text on hover
-  bondStrength: BondStrength;
+  label?: string;
+  notes?: string;
 }
 
 interface SocialGraph {
   persons: Person[];
   relationships: Relationship[];
   cohorts: Cohort[];
-  activeCohortId: string | null;  // currently highlighted cohort (null = all)
+  activeCohortId: string | null;
   metadata: { title: string; createdAt: string; updatedAt: string; };
 }
+
+// src/lib/relationship-config.ts — derived from RelationshipType (not stored)
+// getCategory(type) → 'default' | 'romantic' | 'family' | 'professional'
+// getBondStrength(type) → 1..5
 ```
 
 ---
@@ -97,7 +90,7 @@ interface SocialGraph {
 
 ```
 add_person       { name, cohortNames? }
-add_relationship { sourceName, targetName, type, label, bondStrength }
+add_relationship { sourceName, targetName, type, label? }
 add_cohort       { name }
 update_person    { name, updates }
 update_relationship { sourceName, targetName, updates }
@@ -189,8 +182,10 @@ src/
 │   └── api/parse-input/route.ts      // NL → Claude → operations
 ├── types/
 │   ├── graph.ts                      // Person, Relationship, Cohort, SocialGraph
-│   └── operations.ts                 // GraphOperation types
+│   ├── operations.ts                 // GraphOperation types
+│   └── dev-settings.ts               // DevSettings + defaults
 ├── lib/
+│   ├── relationship-config.ts        // category + bond strength derived from type
 │   ├── graph-reducer.ts              // useReducer: all CRUD actions
 │   ├── apply-operations.ts           // NL operations → reducer dispatches
 │   ├── graph-utils.ts                // name resolution, fuzzy match, uuid
