@@ -7,7 +7,13 @@ import {
 	Plus,
 	SendHorizontal,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -189,6 +195,8 @@ export default function ChatInput() {
 // Chat mode
 // ---------------------------------------------------------------------------
 
+const emptySubscribe = () => () => {};
+
 const EXAMPLE_PROMPTS = [
 	"Kavya is my childhood friend from FIITJEE",
 	"Ashish is my college roommate",
@@ -214,8 +222,11 @@ function ChatMode({
 	onSubmit: (e?: React.FormEvent) => void;
 }) {
 	const { state } = useGraph();
-	const [hasMounted, setHasMounted] = useState(false);
-	useEffect(() => setHasMounted(true), []);
+	const hasMounted = useSyncExternalStore(
+		emptySubscribe,
+		() => true,
+		() => false,
+	);
 	const isEmptyGraph = state.persons.length <= 1;
 	const showExamplePrompts =
 		hasMounted && messages.length === 0 && isEmptyGraph;
