@@ -16,15 +16,11 @@ import type { VisualSettings } from "@/lib/graph-config";
 
 export default function Home() {
 	const [cohortManagerOpen, setCohortManagerOpen] = useState(false);
-	const devSettingsRefHolder =
-		useRef<React.MutableRefObject<VisualSettings> | null>(null);
+	const devSettingsRefHolder = useRef<React.MutableRefObject<VisualSettings> | null>(null);
 
-	const handleDevSettingsRef = useCallback(
-		(ref: React.MutableRefObject<VisualSettings>) => {
-			devSettingsRefHolder.current = ref;
-		},
-		[],
-	);
+	const handleDevSettingsRef = useCallback((ref: React.MutableRefObject<VisualSettings>) => {
+		devSettingsRefHolder.current = ref;
+	}, []);
 
 	return (
 		<GraphProvider>
@@ -37,10 +33,7 @@ export default function Home() {
 					</div>
 					<ChatInput />
 					<PropertiesPanel />
-					<CohortManager
-						open={cohortManagerOpen}
-						onClose={() => setCohortManagerOpen(false)}
-					/>
+					<CohortManager open={cohortManagerOpen} onClose={() => setCohortManagerOpen(false)} />
 					<DevPanel onSettingsRef={handleDevSettingsRef} />
 					<DialRoot position="top-left" defaultOpen={false} />
 				</div>

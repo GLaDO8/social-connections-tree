@@ -17,11 +17,7 @@ import type { RelationshipType } from "@/types/graph";
 // A. Relationship Classification
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type RelationshipCategory =
-	| "default"
-	| "romantic"
-	| "family"
-	| "professional";
+export type RelationshipCategory = "default" | "romantic" | "family" | "professional";
 
 const CATEGORY_MAP: Record<RelationshipType, RelationshipCategory> = {
 	friend: "default",

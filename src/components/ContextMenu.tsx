@@ -15,13 +15,7 @@ interface ContextMenuProps {
 const MENU_WIDTH = 160;
 const MENU_PADDING = 8;
 
-export default function ContextMenu({
-	x,
-	y,
-	nodeId,
-	edgeId,
-	onClose,
-}: ContextMenuProps) {
+export default function ContextMenu({ x, y, nodeId, edgeId, onClose }: ContextMenuProps) {
 	const { state, dispatch, setSelectedNodeId, setSelectedEdgeId } = useGraph();
 	const menuRef = useRef<HTMLDivElement>(null);
 
@@ -96,9 +90,7 @@ export default function ContextMenu({
 	const clampedX = Math.min(x, window.innerWidth - MENU_WIDTH - MENU_PADDING);
 	const clampedY = Math.min(y, window.innerHeight - menuHeight - MENU_PADDING);
 
-	const isEgoNode = nodeId
-		? state.persons.find((p) => p.id === nodeId)?.isEgo === true
-		: false;
+	const isEgoNode = nodeId ? state.persons.find((p) => p.id === nodeId)?.isEgo === true : false;
 
 	if (nodeId) {
 		return (

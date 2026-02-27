@@ -61,81 +61,31 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 		{
 			nodes: {
 				_collapsed: true,
-				nodeRadius: [d.nodeRadius, 5, 30, 1] as [
-					number,
-					number,
-					number,
-					number,
-				],
+				nodeRadius: [d.nodeRadius, 5, 30, 1] as [number, number, number, number],
 				egoRadius: [d.egoRadius, 8, 40, 1] as [number, number, number, number],
 				defaultNodeColor: d.defaultNodeColor,
-				nodeBorderWidth: [d.nodeBorderWidth, 0, 4, 0.5] as [
-					number,
-					number,
-					number,
-					number,
-				],
+				nodeBorderWidth: [d.nodeBorderWidth, 0, 4, 0.5] as [number, number, number, number],
 				nodeBorderColor: d.nodeBorderColor,
-				hoverExpand: [d.hoverExpand, 0, 8, 1] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				selectedGlowOffset: [d.selectedGlowOffset, 2, 12, 1] as [
-					number,
-					number,
-					number,
-					number,
-				],
+				hoverExpand: [d.hoverExpand, 0, 8, 1] as [number, number, number, number],
+				selectedGlowOffset: [d.selectedGlowOffset, 2, 12, 1] as [number, number, number, number],
 				selectedGlowOpacity: [d.selectedGlowOpacity, 0, 1, 0.05] as [
 					number,
 					number,
 					number,
 					number,
 				],
-				cohortRingOffset: [d.cohortRingOffset, 1, 10, 1] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				cohortRingWidth: [d.cohortRingWidth, 1, 5, 0.5] as [
-					number,
-					number,
-					number,
-					number,
-				],
+				cohortRingOffset: [d.cohortRingOffset, 1, 10, 1] as [number, number, number, number],
+				cohortRingWidth: [d.cohortRingWidth, 1, 5, 0.5] as [number, number, number, number],
 			},
 			bondMapping: {
 				bondToThickness: d.bondToThickness,
 			},
 			edges: {
 				_collapsed: true,
-				edgeWidth: [d.edgeWidth, 0.5, 5, 0.5] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				edgeWidthMin: [d.edgeWidthMin, 0.5, 5, 0.5] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				edgeWidthMax: [d.edgeWidthMax, 1, 8, 0.5] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				selectedEdgeWidth: [d.selectedEdgeWidth, 1, 8, 0.5] as [
-					number,
-					number,
-					number,
-					number,
-				],
+				edgeWidth: [d.edgeWidth, 0.5, 5, 0.5] as [number, number, number, number],
+				edgeWidthMin: [d.edgeWidthMin, 0.5, 5, 0.5] as [number, number, number, number],
+				edgeWidthMax: [d.edgeWidthMax, 1, 8, 0.5] as [number, number, number, number],
+				selectedEdgeWidth: [d.selectedEdgeWidth, 1, 8, 0.5] as [number, number, number, number],
 				edgeColorDefault: d.edgeColorDefault,
 				edgeColorRomantic: d.edgeColorRomantic,
 				edgeColorFamily: d.edgeColorFamily,
@@ -145,12 +95,7 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 				_collapsed: true,
 				labelColor: d.labelColor,
 				labelSize: [d.labelSize, 8, 18, 1] as [number, number, number, number],
-				labelOffset: [d.labelOffset, 0, 12, 1] as [
-					number,
-					number,
-					number,
-					number,
-				],
+				labelOffset: [d.labelOffset, 0, 12, 1] as [number, number, number, number],
 				showLabels: d.showLabels,
 			},
 			canvas: {
@@ -249,11 +194,5 @@ export default function DevPanel({ onSettingsRef }: DevPanelProps) {
 		setResetKey((k) => k + 1);
 	}, []);
 
-	return (
-		<DevPanelInner
-			key={resetKey}
-			onSettingsRef={onSettingsRefStable}
-			onReset={handleReset}
-		/>
-	);
+	return <DevPanelInner key={resetKey} onSettingsRef={onSettingsRefStable} onReset={handleReset} />;
 }

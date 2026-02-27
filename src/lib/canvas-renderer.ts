@@ -136,13 +136,7 @@ export function render(
 		const source = personMap.get(rel.sourceId);
 		const target = personMap.get(rel.targetId);
 		if (!source || !target) continue;
-		if (
-			source.x == null ||
-			source.y == null ||
-			target.x == null ||
-			target.y == null
-		)
-			continue;
+		if (source.x == null || source.y == null || target.x == null || target.y == null) continue;
 
 		// Viewport culling
 		const minEdgeX = Math.min(source.x, target.x);
@@ -233,26 +227,16 @@ export function render(
 
 		// Degree-proportional radius
 		const degree = degreeMap.get(person.id) ?? 0;
-		const baseRadius = person.isEgo
-			? d.egoRadius
-			: getVisualRadius(degree, maxDegree, false);
+		const baseRadius = person.isEgo ? d.egoRadius : getVisualRadius(degree, maxDegree, false);
 		const cohortId = person.cohortIds[0];
-		const color = cohortId
-			? (cohortColorMap.get(cohortId) ?? defaultNodeColor)
-			: defaultNodeColor;
+		const color = cohortId ? (cohortColorMap.get(cohortId) ?? defaultNodeColor) : defaultNodeColor;
 		const isSelected = person.id === selectedNodeId;
 		const isHovered = person.id === hoveredNodeId;
 
 		// Cohort highlight ring
 		if (activeCohortId && person.cohortIds.includes(activeCohortId)) {
 			ctx.beginPath();
-			ctx.arc(
-				person.x,
-				person.y,
-				baseRadius + cohortRingOffset,
-				0,
-				Math.PI * 2,
-			);
+			ctx.arc(person.x, person.y, baseRadius + cohortRingOffset, 0, Math.PI * 2);
 			ctx.strokeStyle = color;
 			ctx.lineWidth = cohortRingWidth;
 			ctx.stroke();
@@ -261,13 +245,7 @@ export function render(
 		// Selected glow ring
 		if (isSelected) {
 			ctx.beginPath();
-			ctx.arc(
-				person.x,
-				person.y,
-				baseRadius + selectedGlowOffset,
-				0,
-				Math.PI * 2,
-			);
+			ctx.arc(person.x, person.y, baseRadius + selectedGlowOffset, 0, Math.PI * 2);
 			ctx.fillStyle = `${color}${opacityToHexAlpha(selectedGlowOpacity)}`;
 			ctx.fill();
 		}
@@ -288,9 +266,7 @@ export function render(
 
 		// Label — show for highlighted nodes even at low zoom, use LOD otherwise
 		const showLabel =
-			showLabels &&
-			(isNodeHighlighted || !isHighlighting) &&
-			(isHighlighting || transform.k > 0.4);
+			showLabels && (isNodeHighlighted || !isHighlighting) && (isHighlighting || transform.k > 0.4);
 		if (showLabel) {
 			ctx.fillStyle = labelColor;
 			ctx.fillText(person.name, person.x, person.y + drawRadius + labelOffset);

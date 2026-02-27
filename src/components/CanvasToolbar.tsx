@@ -2,12 +2,7 @@
 
 import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CanvasToolbarProps {
 	onZoomIn: () => void;
@@ -15,11 +10,7 @@ interface CanvasToolbarProps {
 	onFitToScreen: () => void;
 }
 
-export default function CanvasToolbar({
-	onZoomIn,
-	onZoomOut,
-	onFitToScreen,
-}: CanvasToolbarProps) {
+export default function CanvasToolbar({ onZoomIn, onZoomOut, onFitToScreen }: CanvasToolbarProps) {
 	return (
 		<TooltipProvider>
 			<div className="absolute right-4 bottom-20 flex flex-col gap-1 z-10">

@@ -1,12 +1,7 @@
 import { DEFAULT_COHORT_COLORS } from "@/lib/graph-config";
 import type { GraphAction } from "@/lib/graph-reducer";
 import { graphReducer } from "@/lib/graph-reducer";
-import type {
-	Cohort,
-	Person,
-	RelationshipType,
-	SocialGraph,
-} from "@/types/graph";
+import type { Cohort, Person, RelationshipType, SocialGraph } from "@/types/graph";
 import type { GraphOperation } from "@/types/operations";
 
 /**
@@ -101,10 +96,7 @@ export function generateCohortCompletionActions(
  * Resolves names → IDs, auto-creates missing persons/cohorts.
  * Does NOT dispatch — returns the list of actions for the caller to batch.
  */
-export function resolveOperations(
-	operations: GraphOperation[],
-	state: SocialGraph,
-): GraphAction[] {
+export function resolveOperations(operations: GraphOperation[], state: SocialGraph): GraphAction[] {
 	const actions: GraphAction[] = [];
 	let currentState = state;
 
@@ -116,28 +108,20 @@ export function resolveOperations(
 		if (action.type === "ADD_PERSON" && action.payload.id) {
 			currentState = {
 				...currentState,
-				persons: [
-					...currentState.persons,
-					{ ...action.payload, id: action.payload.id } as Person,
-				],
+				persons: [...currentState.persons, { ...action.payload, id: action.payload.id } as Person],
 			};
 		}
 		if (action.type === "UPDATE_PERSON") {
 			const { id, ...updates } = action.payload;
 			currentState = {
 				...currentState,
-				persons: currentState.persons.map((p) =>
-					p.id === id ? { ...p, ...updates } : p,
-				),
+				persons: currentState.persons.map((p) => (p.id === id ? { ...p, ...updates } : p)),
 			};
 		}
 		if (action.type === "ADD_COHORT" && action.payload.id) {
 			currentState = {
 				...currentState,
-				cohorts: [
-					...currentState.cohorts,
-					{ ...action.payload, id: action.payload.id } as Cohort,
-				],
+				cohorts: [...currentState.cohorts, { ...action.payload, id: action.payload.id } as Cohort],
 			};
 		}
 	}
@@ -151,9 +135,7 @@ export function resolveOperations(
 				const existing = findCohortByName(currentState.cohorts, op.data.name);
 				if (!existing) {
 					const color =
-						DEFAULT_COHORT_COLORS[
-							currentState.cohorts.length % DEFAULT_COHORT_COLORS.length
-						];
+						DEFAULT_COHORT_COLORS[currentState.cohorts.length % DEFAULT_COHORT_COLORS.length];
 					act({
 						type: "ADD_COHORT",
 						payload: { id: crypto.randomUUID(), name: op.data.name, color },
@@ -170,9 +152,7 @@ export function resolveOperations(
 						if (existing) return existing.id;
 						// Auto-create missing cohort
 						const color =
-							DEFAULT_COHORT_COLORS[
-								currentState.cohorts.length % DEFAULT_COHORT_COLORS.length
-							];
+							DEFAULT_COHORT_COLORS[currentState.cohorts.length % DEFAULT_COHORT_COLORS.length];
 						const id = crypto.randomUUID();
 						act({
 							type: "ADD_COHORT",
@@ -186,9 +166,7 @@ export function resolveOperations(
 					// Person already exists — add cohorts if specified
 					if (op.data.cohortNames?.length) {
 						const cohortIds = resolveCohortIds(op.data.cohortNames);
-						const newCohortIds = cohortIds.filter(
-							(id) => !existing.cohortIds.includes(id),
-						);
+						const newCohortIds = cohortIds.filter((id) => !existing.cohortIds.includes(id));
 						if (newCohortIds.length > 0) {
 							act({
 								type: "UPDATE_PERSON",
@@ -278,9 +256,7 @@ export function resolveOperations(
 							if (existing) return existing.id;
 							// Auto-create missing cohort
 							const color =
-								DEFAULT_COHORT_COLORS[
-									currentState.cohorts.length % DEFAULT_COHORT_COLORS.length
-								];
+								DEFAULT_COHORT_COLORS[currentState.cohorts.length % DEFAULT_COHORT_COLORS.length];
 							const id = crypto.randomUUID();
 							act({
 								type: "ADD_COHORT",
@@ -289,9 +265,7 @@ export function resolveOperations(
 							return id;
 						})
 						.filter((id): id is string => id != null);
-					const newCohortIds = cohortIds.filter(
-						(id) => !person.cohortIds.includes(id),
-					);
+					const newCohortIds = cohortIds.filter((id) => !person.cohortIds.includes(id));
 					if (newCohortIds.length > 0) {
 						act({
 							type: "UPDATE_PERSON",
@@ -305,8 +279,7 @@ export function resolveOperations(
 				}
 
 				// Handle other updates (name, notes)
-				const hasOtherUpdates =
-					op.data.updates.name || op.data.updates.notes !== undefined;
+				const hasOtherUpdates = op.data.updates.name || op.data.updates.notes !== undefined;
 				if (hasOtherUpdates) {
 					act({
 						type: "UPDATE_PERSON",
@@ -317,14 +290,8 @@ export function resolveOperations(
 			}
 
 			case "update_relationship": {
-				const source = findPersonByName(
-					currentState.persons,
-					op.data.sourceName,
-				);
-				const target = findPersonByName(
-					currentState.persons,
-					op.data.targetName,
-				);
+				const source = findPersonByName(currentState.persons, op.data.sourceName);
+				const target = findPersonByName(currentState.persons, op.data.targetName);
 				if (!source || !target) break;
 				const rel = currentState.relationships.find(
 					(r) =>
@@ -337,8 +304,7 @@ export function resolveOperations(
 					updates.type = op.data.updates.type;
 				}
 				if (op.data.updates.label) updates.label = op.data.updates.label;
-				if (op.data.updates.notes !== undefined)
-					updates.notes = op.data.updates.notes;
+				if (op.data.updates.notes !== undefined) updates.notes = op.data.updates.notes;
 				act({
 					type: "UPDATE_RELATIONSHIP",
 					payload: { id: rel.id, ...updates },
@@ -354,14 +320,8 @@ export function resolveOperations(
 			}
 
 			case "remove_relationship": {
-				const source = findPersonByName(
-					currentState.persons,
-					op.data.sourceName,
-				);
-				const target = findPersonByName(
-					currentState.persons,
-					op.data.targetName,
-				);
+				const source = findPersonByName(currentState.persons, op.data.sourceName);
+				const target = findPersonByName(currentState.persons, op.data.targetName);
 				if (!source || !target) break;
 				const rel = currentState.relationships.find(
 					(r) =>
@@ -386,10 +346,7 @@ export function resolveOperations(
 		}
 
 		for (const cohortId of affectedCohortIds) {
-			const completionActions = generateCohortCompletionActions(
-				cohortId,
-				postOpState,
-			);
+			const completionActions = generateCohortCompletionActions(cohortId, postOpState);
 			for (const ca of completionActions) {
 				actions.push(ca);
 				// Update postOpState so subsequent cohort completions see these edges

@@ -9,12 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGraph } from "@/context/GraphContext";
 import { exportGraph, importGraphFromFile } from "@/lib/persistence";
 
@@ -47,16 +42,11 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 	return (
 		<header className="flex h-12 w-full items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur">
 			{/* Title */}
-			<h1 className="truncate text-sm font-semibold text-foreground">
-				{metadata.title}
-			</h1>
+			<h1 className="truncate text-sm font-semibold text-foreground">{metadata.title}</h1>
 
 			{/* Right section: cohort dropdown + settings */}
 			<div className="flex items-center gap-2">
-				<Select
-					value={activeCohortId ?? "all"}
-					onValueChange={handleCohortChange}
-				>
+				<Select value={activeCohortId ?? "all"} onValueChange={handleCohortChange}>
 					<SelectTrigger
 						size="sm"
 						className="min-w-[140px] border-border bg-muted/60 text-foreground"
@@ -77,9 +67,7 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 											style={{ backgroundColor: cohort.color }}
 										/>
 										{cohort.name}
-										<span className="text-muted-foreground">
-											({memberCount})
-										</span>
+										<span className="text-muted-foreground">({memberCount})</span>
 									</span>
 								</SelectItem>
 							);

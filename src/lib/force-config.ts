@@ -31,10 +31,7 @@ export interface LinkDatum extends SimulationLinkDatum<Person> {
 
 export type ForceSimulation = Simulation<Person, LinkDatum>;
 
-function toLinks(
-	relationships: Relationship[],
-	persons: Person[],
-): LinkDatum[] {
+function toLinks(relationships: Relationship[], persons: Person[]): LinkDatum[] {
 	const idSet = new Set(persons.map((p) => p.id));
 	return relationships
 		.filter((r) => idSet.has(r.sourceId) && idSet.has(r.targetId))
@@ -60,12 +57,7 @@ function computeBestBondToEgo(
 	const bestBondToEgo = new Map<string, BondStrength>();
 	if (!egoId) return bestBondToEgo;
 	for (const r of relationships) {
-		const otherId =
-			r.sourceId === egoId
-				? r.targetId
-				: r.targetId === egoId
-					? r.sourceId
-					: null;
+		const otherId = r.sourceId === egoId ? r.targetId : r.targetId === egoId ? r.sourceId : null;
 		if (otherId) {
 			const bond = getBondStrength(r.type);
 			const current = bestBondToEgo.get(otherId);
@@ -78,11 +70,7 @@ function computeBestBondToEgo(
 }
 
 /** Create a radial force that arranges nodes in concentric rings by bond to ego. */
-function makeRadialForce(
-	bestBondToEgo: Map<string, BondStrength>,
-	cx: number,
-	cy: number,
-) {
+function makeRadialForce(bestBondToEgo: Map<string, BondStrength>, cx: number, cy: number) {
 	return forceRadial<Person>(
 		(d) => {
 			if (d.isEgo) return 0;
@@ -130,10 +118,7 @@ export function createSimulation(
 				})
 				.distanceMax(PHYSICS.chargeDistanceMax),
 		)
-		.force(
-			"center",
-			forceCenter<Person>(cx, cy).strength(PHYSICS.centerStrength),
-		)
+		.force("center", forceCenter<Person>(cx, cy).strength(PHYSICS.centerStrength))
 		.force(
 			"collide",
 			forceCollide<Person>()

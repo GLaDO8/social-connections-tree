@@ -1,17 +1,8 @@
-import {
-	EGO_RADIUS,
-	MAX_NODE_RADIUS,
-	MIN_NODE_RADIUS,
-	NODE_RADIUS,
-} from "@/lib/graph-config";
+import { EGO_RADIUS, MAX_NODE_RADIUS, MIN_NODE_RADIUS, NODE_RADIUS } from "@/lib/graph-config";
 import type { Person, Relationship, SocialGraph } from "@/types/graph";
 
 /** Compute visual radius for a node based on its connection count. */
-export function getVisualRadius(
-	degree: number,
-	maxDegree: number,
-	isEgo: boolean,
-): number {
+export function getVisualRadius(degree: number, maxDegree: number, isEgo: boolean): number {
 	if (isEgo) return EGO_RADIUS;
 	if (maxDegree <= 1) return NODE_RADIUS;
 	const normalized = Math.sqrt(degree) / Math.sqrt(maxDegree);

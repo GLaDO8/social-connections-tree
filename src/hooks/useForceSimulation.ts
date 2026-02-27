@@ -28,7 +28,6 @@ export function useForceSimulation(
 
 	// Create simulation on mount, stop on unmount.
 	// Data and size changes are handled by the effects below.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally mount-only
 	useEffect(() => {
 		const sim = createSimulation(persons, relationships, width, height);
 
@@ -49,7 +48,6 @@ export function useForceSimulation(
 	}, []);
 
 	// Sync data when persons or relationships change
-	// biome-ignore lint/correctness/useExhaustiveDependencies: width/height handled by resize effect below
 	useEffect(() => {
 		const sim = simulationRef.current;
 		if (!sim) return;

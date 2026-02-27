@@ -150,14 +150,7 @@ export function hitTestEdge(
 		const target = personMap.get(rel.targetId);
 		if (!source || !target) continue;
 
-		const dist = pointToSegmentDistance(
-			x,
-			y,
-			source.x,
-			source.y,
-			target.x,
-			target.y,
-		);
+		const dist = pointToSegmentDistance(x, y, source.x, source.y, target.x, target.y);
 
 		if (dist < closestDist) {
 			closestDist = dist;

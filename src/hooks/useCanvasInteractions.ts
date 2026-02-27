@@ -159,12 +159,7 @@ export function useCanvasInteractions(
 				return;
 			}
 
-			const hitEdge = hitTestEdge(
-				relationshipsRef.current,
-				personsRef.current,
-				pos.x,
-				pos.y,
-			);
+			const hitEdge = hitTestEdge(relationshipsRef.current, personsRef.current, pos.x, pos.y);
 
 			if (hitEdge) {
 				callbacksRef.current.onSelectEdge(hitEdge.id);

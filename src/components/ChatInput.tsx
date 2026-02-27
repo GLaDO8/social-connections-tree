@@ -1,19 +1,7 @@
 "use client";
 
-import {
-	ChevronDown,
-	ChevronUp,
-	MessageSquare,
-	Plus,
-	SendHorizontal,
-} from "lucide-react";
-import {
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-	useSyncExternalStore,
-} from "react";
+import { ChevronDown, ChevronUp, MessageSquare, Plus, SendHorizontal } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -49,13 +37,11 @@ export default function ChatInput() {
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	// Auto-scroll to bottom on new message
-	// biome-ignore lint/correctness/useExhaustiveDependencies: messages is an intentional trigger for scroll
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [messages]);
 
 	// Auto-focus input on mount and mode switch
-	// biome-ignore lint/correctness/useExhaustiveDependencies: mode is an intentional trigger for focus
 	useEffect(() => {
 		inputRef.current?.focus();
 	}, [mode]);
@@ -93,9 +79,7 @@ export default function ChatInput() {
 				});
 
 				if (!res.ok) {
-					const err = await res
-						.json()
-						.catch(() => ({ error: "Request failed" }));
+					const err = await res.json().catch(() => ({ error: "Request failed" }));
 					throw new Error(err.error || `HTTP ${res.status}`);
 				}
 
@@ -108,19 +92,14 @@ export default function ChatInput() {
 				// Replace loading message with explanation
 				setMessages((prev) =>
 					prev.map((m) =>
-						m.id === loadingMsg.id
-							? { ...m, role: "assistant", content: data.explanation }
-							: m,
+						m.id === loadingMsg.id ? { ...m, role: "assistant", content: data.explanation } : m,
 					),
 				);
 			} catch (err) {
-				const errorMessage =
-					err instanceof Error ? err.message : "Something went wrong";
+				const errorMessage = err instanceof Error ? err.message : "Something went wrong";
 				setMessages((prev) =>
 					prev.map((m) =>
-						m.id === loadingMsg.id
-							? { ...m, role: "error", content: errorMessage }
-							: m,
+						m.id === loadingMsg.id ? { ...m, role: "error", content: errorMessage } : m,
 					),
 				);
 			} finally {
@@ -228,8 +207,7 @@ function ChatMode({
 		() => false,
 	);
 	const isEmptyGraph = state.persons.length <= 1;
-	const showExamplePrompts =
-		hasMounted && messages.length === 0 && isEmptyGraph;
+	const showExamplePrompts = hasMounted && messages.length === 0 && isEmptyGraph;
 
 	return (
 		<>
@@ -248,9 +226,7 @@ function ChatMode({
 			{/* Example prompts for empty state */}
 			{showExamplePrompts && (
 				<div className="px-4 pb-2 pt-1">
-					<p className="text-[11px] text-muted-foreground mb-2">
-						Try one of these to get started:
-					</p>
+					<p className="text-[11px] text-muted-foreground mb-2">Try one of these to get started:</p>
 					<div className="flex flex-wrap gap-2">
 						{EXAMPLE_PROMPTS.map((prompt) => (
 							<button
@@ -342,15 +318,9 @@ function ManualMode() {
 	}
 
 	return (
-		<form
-			onSubmit={handleSubmit}
-			className="flex items-end gap-3 px-4 py-3 flex-wrap"
-		>
+		<form onSubmit={handleSubmit} className="flex items-end gap-3 px-4 py-3 flex-wrap">
 			<div className="flex flex-col gap-1">
-				<label
-					htmlFor="manual-name"
-					className="text-[11px] text-muted-foreground"
-				>
+				<label htmlFor="manual-name" className="text-[11px] text-muted-foreground">
 					Name
 				</label>
 				<Input
@@ -364,10 +334,7 @@ function ManualMode() {
 			</div>
 
 			<div className="flex flex-col gap-1">
-				<label
-					htmlFor="manual-connect"
-					className="text-[11px] text-muted-foreground"
-				>
+				<label htmlFor="manual-connect" className="text-[11px] text-muted-foreground">
 					Connect to
 				</label>
 				<Select value={connectToId} onValueChange={setConnectToId}>
@@ -379,11 +346,7 @@ function ManualMode() {
 					</SelectTrigger>
 					<SelectContent className="bg-muted border-border">
 						{state.persons.map((p) => (
-							<SelectItem
-								key={p.id}
-								value={p.id}
-								className="text-sm text-foreground"
-							>
+							<SelectItem key={p.id} value={p.id} className="text-sm text-foreground">
 								{p.name}
 							</SelectItem>
 						))}
@@ -392,16 +355,10 @@ function ManualMode() {
 			</div>
 
 			<div className="flex flex-col gap-1">
-				<label
-					htmlFor="manual-reltype"
-					className="text-[11px] text-muted-foreground"
-				>
+				<label htmlFor="manual-reltype" className="text-[11px] text-muted-foreground">
 					Relationship
 				</label>
-				<Select
-					value={relType}
-					onValueChange={(v) => setRelType(v as RelationshipType)}
-				>
+				<Select value={relType} onValueChange={(v) => setRelType(v as RelationshipType)}>
 					<SelectTrigger
 						id="manual-reltype"
 						className="w-40 h-8 text-sm bg-muted border-border text-foreground"
@@ -410,11 +367,7 @@ function ManualMode() {
 					</SelectTrigger>
 					<SelectContent className="bg-muted border-border">
 						{RELATIONSHIP_TYPES.map((t) => (
-							<SelectItem
-								key={t.value}
-								value={t.value}
-								className="text-sm text-foreground"
-							>
+							<SelectItem key={t.value} value={t.value} className="text-sm text-foreground">
 								{t.label}
 							</SelectItem>
 						))}
@@ -449,16 +402,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 						<span className="animate-bounce" style={{ animationDelay: "0ms" }}>
 							.
 						</span>
-						<span
-							className="animate-bounce"
-							style={{ animationDelay: "150ms" }}
-						>
+						<span className="animate-bounce" style={{ animationDelay: "150ms" }}>
 							.
 						</span>
-						<span
-							className="animate-bounce"
-							style={{ animationDelay: "300ms" }}
-						>
+						<span className="animate-bounce" style={{ animationDelay: "300ms" }}>
 							.
 						</span>
 					</span>

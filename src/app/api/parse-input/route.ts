@@ -133,8 +133,7 @@ const tools: Anthropic.Tool[] = [
 				cohortNames: {
 					type: "array",
 					items: { type: "string" },
-					description:
-						"Group names this person belongs to (e.g. ['FIITJEE', 'College'])",
+					description: "Group names this person belongs to (e.g. ['FIITJEE', 'College'])",
 				},
 			},
 			required: ["name"],
@@ -142,8 +141,7 @@ const tools: Anthropic.Tool[] = [
 	},
 	{
 		name: "add_relationship",
-		description:
-			'Add a relationship between two people. Use "Me" for the ego node.',
+		description: 'Add a relationship between two people. Use "Me" for the ego node.',
 		input_schema: {
 			type: "object" as const,
 			properties: {
@@ -159,8 +157,7 @@ const tools: Anthropic.Tool[] = [
 				},
 				label: {
 					type: "string",
-					description:
-						"Short natural phrase for edge hover (e.g. 'childhood friend from FIITJEE')",
+					description: "Short natural phrase for edge hover (e.g. 'childhood friend from FIITJEE')",
 				},
 				notes: {
 					type: "string",
@@ -184,8 +181,7 @@ const tools: Anthropic.Tool[] = [
 	},
 	{
 		name: "update_person",
-		description:
-			"Update an existing person's details or assign them to cohorts.",
+		description: "Update an existing person's details or assign them to cohorts.",
 		input_schema: {
 			type: "object" as const,
 			properties: {
@@ -201,8 +197,7 @@ const tools: Anthropic.Tool[] = [
 				cohortNames: {
 					type: "array",
 					items: { type: "string" },
-					description:
-						"Cohort/group names to assign this person to (e.g. ['IIITB', 'College'])",
+					description: "Cohort/group names to assign this person to (e.g. ['IIITB', 'College'])",
 				},
 			},
 			required: ["name"],
@@ -224,8 +219,7 @@ const tools: Anthropic.Tool[] = [
 				label: { type: "string", description: "New edge label" },
 				notes: {
 					type: "string",
-					description:
-						"New contextual details or backstory about the relationship.",
+					description: "New contextual details or backstory about the relationship.",
 				},
 			},
 			required: ["sourceName", "targetName"],
@@ -361,19 +355,14 @@ export async function POST(request: Request) {
 		}
 
 		const { input, existingPersonNames, existingCohortNames } = parsed.data;
-		const systemPrompt = buildSystemPrompt(
-			existingPersonNames,
-			existingCohortNames,
-		);
+		const systemPrompt = buildSystemPrompt(existingPersonNames, existingCohortNames);
 
 		// Multi-turn tool-use loop: collect all tool calls across turns.
 		// Claude may return stop_reason "tool_use" when it has more calls to make,
 		// so we feed back tool results and continue until it stops.
 		const allToolUseBlocks: Anthropic.ToolUseBlock[] = [];
 		const allTextBlocks: Anthropic.TextBlock[] = [];
-		const messages: Anthropic.MessageParam[] = [
-			{ role: "user", content: input },
-		];
+		const messages: Anthropic.MessageParam[] = [{ role: "user", content: input }];
 
 		const MAX_TURNS = 5;
 		for (let turn = 0; turn < MAX_TURNS; turn++) {
@@ -435,9 +424,6 @@ export async function POST(request: Request) {
 		return NextResponse.json(result.data);
 	} catch (error) {
 		console.error("Parse input error:", error);
-		return NextResponse.json(
-			{ error: "Failed to process request" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
 	}
 }

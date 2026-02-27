@@ -72,10 +72,7 @@ export function createInitialState(): SocialGraph {
 // Reducer
 // ---------------------------------------------------------------------------
 
-export function graphReducer(
-	state: SocialGraph,
-	action: GraphAction,
-): SocialGraph {
+export function graphReducer(state: SocialGraph, action: GraphAction): SocialGraph {
 	switch (action.type) {
 		case "ADD_PERSON": {
 			const { id: providedId, ...rest } = action.payload;
@@ -97,9 +94,7 @@ export function graphReducer(
 			return withTimestamp({
 				...state,
 				persons: state.persons.filter((p) => p.id !== id),
-				relationships: state.relationships.filter(
-					(r) => r.sourceId !== id && r.targetId !== id,
-				),
+				relationships: state.relationships.filter((r) => r.sourceId !== id && r.targetId !== id),
 			});
 		}
 
@@ -107,9 +102,7 @@ export function graphReducer(
 			const { id, ...updates } = action.payload;
 			return withTimestamp({
 				...state,
-				persons: state.persons.map((p) =>
-					p.id === id ? { ...p, ...updates } : p,
-				),
+				persons: state.persons.map((p) => (p.id === id ? { ...p, ...updates } : p)),
 			});
 		}
 
@@ -136,9 +129,7 @@ export function graphReducer(
 			const { id, ...updates } = action.payload;
 			return withTimestamp({
 				...state,
-				relationships: state.relationships.map((r) =>
-					r.id === id ? { ...r, ...updates } : r,
-				),
+				relationships: state.relationships.map((r) => (r.id === id ? { ...r, ...updates } : r)),
 			});
 		}
 
@@ -177,9 +168,7 @@ export function graphReducer(
 			const { id, ...updates } = action.payload;
 			return withTimestamp({
 				...state,
-				cohorts: state.cohorts.map((c) =>
-					c.id === id ? { ...c, ...updates } : c,
-				),
+				cohorts: state.cohorts.map((c) => (c.id === id ? { ...c, ...updates } : c)),
 			});
 		}
 
@@ -192,8 +181,7 @@ export function graphReducer(
 					...p,
 					cohortIds: p.cohortIds.filter((cid) => cid !== id),
 				})),
-				activeCohortId:
-					state.activeCohortId === id ? null : state.activeCohortId,
+				activeCohortId: state.activeCohortId === id ? null : state.activeCohortId,
 			});
 		}
 

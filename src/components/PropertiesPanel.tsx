@@ -19,11 +19,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useGraph } from "@/context/GraphContext";
 import { generateCohortCompletionActions } from "@/lib/apply-operations";
-import {
-	BOND_LABELS,
-	getBondStrength,
-	RELATIONSHIP_TYPES,
-} from "@/lib/graph-config";
+import { BOND_LABELS, getBondStrength, RELATIONSHIP_TYPES } from "@/lib/graph-config";
 import { graphReducer } from "@/lib/graph-reducer";
 import type { RelationshipType } from "@/types/graph";
 
@@ -32,14 +28,8 @@ import type { RelationshipType } from "@/types/graph";
 // ---------------------------------------------------------------------------
 
 function NodePanel() {
-	const {
-		state,
-		dispatch,
-		batchDispatch,
-		selectedNodeId,
-		setSelectedNodeId,
-		setSelectedEdgeId,
-	} = useGraph();
+	const { state, dispatch, batchDispatch, selectedNodeId, setSelectedNodeId, setSelectedEdgeId } =
+		useGraph();
 
 	const maybePerson = state.persons.find((p) => p.id === selectedNodeId);
 
@@ -61,13 +51,9 @@ function NodePanel() {
 		(r) => r.sourceId === person.id || r.targetId === person.id,
 	);
 
-	const personCohorts = state.cohorts.filter((c) =>
-		person.cohortIds.includes(c.id),
-	);
+	const personCohorts = state.cohorts.filter((c) => person.cohortIds.includes(c.id));
 
-	const availableCohorts = state.cohorts.filter(
-		(c) => !person.cohortIds.includes(c.id),
-	);
+	const availableCohorts = state.cohorts.filter((c) => !person.cohortIds.includes(c.id));
 
 	function commitName() {
 		const trimmed = name.trim();
@@ -102,10 +88,7 @@ function NodePanel() {
 
 		// Compute post-update state to generate completion edges
 		const updatedState = graphReducer(state, updateAction);
-		const completionActions = generateCohortCompletionActions(
-			cohortId,
-			updatedState,
-		);
+		const completionActions = generateCohortCompletionActions(cohortId, updatedState);
 
 		// Batch: update person + all completion edges = one undo entry
 		batchDispatch([updateAction, ...completionActions]);
@@ -130,9 +113,7 @@ function NodePanel() {
 		<>
 			{/* Header */}
 			<div className="flex items-center justify-between p-3">
-				<h3 className="text-sm font-semibold text-foreground">
-					{person.isEgo ? "You" : "Person"}
-				</h3>
+				<h3 className="text-sm font-semibold text-foreground">{person.isEgo ? "You" : "Person"}</h3>
 				<Button
 					variant="ghost"
 					size="icon-xs"
@@ -146,9 +127,7 @@ function NodePanel() {
 			{/* Name */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
-				<Label className="text-xs text-muted-foreground mb-1.5 block">
-					Name
-				</Label>
+				<Label className="text-xs text-muted-foreground mb-1.5 block">Name</Label>
 				<Input
 					value={name}
 					onChange={(e) => setName(e.target.value)}
@@ -164,9 +143,7 @@ function NodePanel() {
 			{/* Cohorts */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
-				<Label className="text-xs text-muted-foreground mb-1.5 block">
-					Cohorts
-				</Label>
+				<Label className="text-xs text-muted-foreground mb-1.5 block">Cohorts</Label>
 				<div className="flex flex-wrap gap-1.5 mb-2">
 					{personCohorts.length === 0 && (
 						<span className="text-xs text-muted-foreground italic">None</span>
@@ -200,11 +177,7 @@ function NodePanel() {
 						</SelectTrigger>
 						<SelectContent className="bg-muted border-border">
 							{availableCohorts.map((cohort) => (
-								<SelectItem
-									key={cohort.id}
-									value={cohort.id}
-									className="text-xs text-foreground"
-								>
+								<SelectItem key={cohort.id} value={cohort.id} className="text-xs text-foreground">
 									<span className="flex items-center gap-1.5">
 										<span
 											className="w-2 h-2 rounded-full inline-block"
@@ -222,9 +195,7 @@ function NodePanel() {
 			{/* Notes */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
-				<Label className="text-xs text-muted-foreground mb-1.5 block">
-					Notes
-				</Label>
+				<Label className="text-xs text-muted-foreground mb-1.5 block">Notes</Label>
 				<Textarea
 					value={notes}
 					onChange={(e) => setNotes(e.target.value)}
@@ -240,15 +211,12 @@ function NodePanel() {
 				<>
 					<Separator />
 					<div className="px-3 pb-3 pt-3">
-						<Label className="text-xs text-muted-foreground mb-1.5 block">
-							Relationships
-						</Label>
+						<Label className="text-xs text-muted-foreground mb-1.5 block">Relationships</Label>
 						<div className="space-y-1">
 							{connectedRelationships.map((rel) => {
 								const otherName = getOtherPersonName(rel);
 								const typeLabel =
-									RELATIONSHIP_TYPES.find((t) => t.value === rel.type)?.label ??
-									rel.type;
+									RELATIONSHIP_TYPES.find((t) => t.value === rel.type)?.label ?? rel.type;
 								return (
 									<button
 										type="button"
@@ -260,9 +228,7 @@ function NodePanel() {
 										className="w-full text-left px-2 py-1.5 rounded text-xs text-muted-foreground hover:bg-accent transition-colors flex items-center justify-between"
 									>
 										<span className="truncate">{otherName}</span>
-										<span className="text-muted-foreground ml-2 flex-shrink-0">
-											{typeLabel}
-										</span>
+										<span className="text-muted-foreground ml-2 flex-shrink-0">{typeLabel}</span>
 									</button>
 								);
 							})}
@@ -301,9 +267,7 @@ function NodePanel() {
 function EdgePanel() {
 	const { state, dispatch, selectedEdgeId, setSelectedEdgeId } = useGraph();
 
-	const maybeRelationship = state.relationships.find(
-		(r) => r.id === selectedEdgeId,
-	);
+	const maybeRelationship = state.relationships.find((r) => r.id === selectedEdgeId);
 
 	const [label, setLabel] = useState("");
 	const [edgeNotes, setEdgeNotes] = useState("");
@@ -318,12 +282,8 @@ function EdgePanel() {
 	if (!maybeRelationship) return null;
 	const relationship = maybeRelationship;
 
-	const sourcePerson = state.persons.find(
-		(p) => p.id === relationship.sourceId,
-	);
-	const targetPerson = state.persons.find(
-		(p) => p.id === relationship.targetId,
-	);
+	const sourcePerson = state.persons.find((p) => p.id === relationship.sourceId);
+	const targetPerson = state.persons.find((p) => p.id === relationship.targetId);
 
 	function commitLabel() {
 		const trimmed = label.trim();
@@ -385,20 +345,14 @@ function EdgePanel() {
 			{/* Type */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
-				<Label className="text-xs text-muted-foreground mb-1.5 block">
-					Type
-				</Label>
+				<Label className="text-xs text-muted-foreground mb-1.5 block">Type</Label>
 				<Select value={relationship.type} onValueChange={handleTypeChange}>
 					<SelectTrigger className="h-8 text-sm bg-muted border-border text-foreground">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent className="bg-muted border-border">
 						{RELATIONSHIP_TYPES.map((rt) => (
-							<SelectItem
-								key={rt.value}
-								value={rt.value}
-								className="text-sm text-foreground"
-							>
+							<SelectItem key={rt.value} value={rt.value} className="text-sm text-foreground">
 								{rt.label}
 							</SelectItem>
 						))}
@@ -409,9 +363,7 @@ function EdgePanel() {
 			{/* Label */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
-				<Label className="text-xs text-muted-foreground mb-1.5 block">
-					Label
-				</Label>
+				<Label className="text-xs text-muted-foreground mb-1.5 block">Label</Label>
 				<Input
 					value={label}
 					onChange={(e) => setLabel(e.target.value)}
@@ -453,9 +405,7 @@ function EdgePanel() {
 			{/* Notes */}
 			<Separator />
 			<div className="px-3 pb-3 pt-3">
-				<Label className="text-xs text-muted-foreground mb-1.5 block">
-					Notes
-				</Label>
+				<Label className="text-xs text-muted-foreground mb-1.5 block">Notes</Label>
 				<Textarea
 					value={edgeNotes}
 					onChange={(e) => setEdgeNotes(e.target.value)}

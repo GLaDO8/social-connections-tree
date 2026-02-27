@@ -24,25 +24,15 @@ interface ContextMenuState {
 }
 
 export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
-	const {
-		state,
-		selectedNodeId,
-		selectedEdgeId,
-		setSelectedNodeId,
-		setSelectedEdgeId,
-	} = useGraph();
+	const { state, selectedNodeId, selectedEdgeId, setSelectedNodeId, setSelectedEdgeId } =
+		useGraph();
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const transformRef = useRef({ x: 0, y: 0, k: 1 });
 	const sizeRef = useRef({ width: 0, height: 0 });
 	const rafRef = useRef<number | null>(null);
-	const zoomBehaviorRef = useRef<ZoomBehavior<
-		HTMLCanvasElement,
-		unknown
-	> | null>(null);
-	const selectionRef = useRef<ReturnType<
-		typeof select<HTMLCanvasElement, unknown>
-	> | null>(null);
+	const zoomBehaviorRef = useRef<ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+	const selectionRef = useRef<ReturnType<typeof select<HTMLCanvasElement, unknown>> | null>(null);
 
 	// Context menu state
 	const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -80,8 +70,7 @@ export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
 				width: sizeRef.current.width,
 				height: sizeRef.current.height,
 				transform: transformRef.current,
-				visualSettings:
-					devSettingsRefRef.current?.current?.current ?? undefined,
+				visualSettings: devSettingsRefRef.current?.current?.current ?? undefined,
 			});
 		});
 	}, []);
@@ -96,24 +85,22 @@ export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
 	);
 
 	// Canvas interactions (click, drag, hover)
-	const { dragBehavior, hoveredNodeId, hoveredPosition } =
-		useCanvasInteractions(
-			canvasRef,
-			state.persons,
-			state.relationships,
-			simulationRef,
-			transformRef,
-			hoveredNodeIdRef,
-			scheduleRender,
-			{
-				onSelectNode: setSelectedNodeId,
-				onSelectEdge: setSelectedEdgeId,
-			},
-			devSettingsRef,
-		);
+	const { dragBehavior, hoveredNodeId, hoveredPosition } = useCanvasInteractions(
+		canvasRef,
+		state.persons,
+		state.relationships,
+		simulationRef,
+		transformRef,
+		hoveredNodeIdRef,
+		scheduleRender,
+		{
+			onSelectNode: setSelectedNodeId,
+			onSelectEdge: setSelectedEdgeId,
+		},
+		devSettingsRef,
+	);
 
 	// Re-render when React state changes (selection, graph data)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: deps are intentional triggers — scheduleRender reads from refs
 	useEffect(() => {
 		scheduleRender();
 	}, [
@@ -173,16 +160,8 @@ export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
 
 			const s = stateRef.current;
 			const ds = devSettingsRefRef.current?.current?.current;
-			const hitNode = hitTestNode(
-				s.persons,
-				s.relationships,
-				cx,
-				cy,
-				ds?.egoRadius,
-			);
-			const hitEdge = hitNode
-				? null
-				: hitTestEdge(s.relationships, s.persons, cx, cy);
+			const hitNode = hitTestNode(s.persons, s.relationships, cx, cy, ds?.egoRadius);
+			const hitEdge = hitNode ? null : hitTestEdge(s.relationships, s.persons, cx, cy);
 
 			if (hitNode || hitEdge) {
 				setContextMenu({
@@ -280,28 +259,17 @@ export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
 
 	return (
 		<div className="relative w-full h-full">
-			<canvas
-				ref={canvasRef}
-				style={{ width: "100%", height: "100%" }}
-				className="block"
-			/>
+			<canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} className="block" />
 			{hoveredNode && hoveredPosition && (
 				<div
 					className="pointer-events-none absolute z-10 rounded bg-popover/90 px-2 py-1 text-xs text-popover-foreground shadow-lg"
 					style={{
-						left:
-							hoveredPosition.x -
-							(canvasRef.current?.getBoundingClientRect().left ?? 0),
-						top:
-							hoveredPosition.y -
-							(canvasRef.current?.getBoundingClientRect().top ?? 0) -
-							36,
+						left: hoveredPosition.x - (canvasRef.current?.getBoundingClientRect().left ?? 0),
+						top: hoveredPosition.y - (canvasRef.current?.getBoundingClientRect().top ?? 0) - 36,
 					}}
 				>
 					<span className="font-medium">{hoveredNode.name}</span>
-					{hoveredNodeCohort && (
-						<span className="ml-1.5 opacity-70">{hoveredNodeCohort.name}</span>
-					)}
+					{hoveredNodeCohort && <span className="ml-1.5 opacity-70">{hoveredNodeCohort.name}</span>}
 				</div>
 			)}
 			<CanvasToolbar

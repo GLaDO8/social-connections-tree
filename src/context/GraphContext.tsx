@@ -12,11 +12,7 @@ import {
 } from "react";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { stripPhysicsState } from "@/lib/graph-constants";
-import {
-	createInitialState,
-	type GraphAction,
-	graphReducer,
-} from "@/lib/graph-reducer";
+import { createInitialState, type GraphAction, graphReducer } from "@/lib/graph-reducer";
 import { loadGraph } from "@/lib/persistence";
 import type { SocialGraph } from "@/types/graph";
 
@@ -98,9 +94,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 	const batchDispatch = useCallback(
 		(actions: GraphAction[]) => {
 			if (actions.length === 0) return;
-			const hasMutation = actions.some(
-				(a) => !NON_MUTATING_ACTIONS.has(a.type),
-			);
+			const hasMutation = actions.some((a) => !NON_MUTATING_ACTIONS.has(a.type));
 			if (hasMutation) {
 				pushUndo(stripPhysicsState(stateRef.current));
 			}
@@ -150,22 +144,10 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 			setSelectedNodeId,
 			setSelectedEdgeId,
 		}),
-		[
-			state,
-			dispatch,
-			batchDispatch,
-			undo,
-			redo,
-			canUndo,
-			canRedo,
-			selectedNodeId,
-			selectedEdgeId,
-		],
+		[state, dispatch, batchDispatch, undo, redo, canUndo, canRedo, selectedNodeId, selectedEdgeId],
 	);
 
-	return (
-		<GraphContext.Provider value={value}>{children}</GraphContext.Provider>
-	);
+	return <GraphContext.Provider value={value}>{children}</GraphContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------

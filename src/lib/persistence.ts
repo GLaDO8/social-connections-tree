@@ -39,11 +39,9 @@ const RelationshipSchema = z.object({
 });
 
 const SocialGraphSchema = z.object({
-	persons: z
-		.array(PersonSchema)
-		.refine((persons) => persons.some((p) => p.isEgo), {
-			message: "Graph must contain an ego node",
-		}),
+	persons: z.array(PersonSchema).refine((persons) => persons.some((p) => p.isEgo), {
+		message: "Graph must contain an ego node",
+	}),
 	relationships: z.array(RelationshipSchema),
 	cohorts: z.array(CohortSchema),
 	activeCohortId: z.union([z.string(), z.null()]),
@@ -84,7 +82,7 @@ export function loadGraph(): SocialGraph | null {
 	}
 }
 
-export function clearGraph(): void {
+function clearGraph(): void {
 	localStorage.removeItem(STORAGE_KEY);
 }
 

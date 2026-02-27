@@ -3,12 +3,7 @@
 import { Palette, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -57,10 +52,7 @@ export default function CohortManager({ open, onClose }: CohortManagerProps) {
 		dispatch({ type: "UPDATE_COHORT", payload: { id, name: trimmed } });
 	}
 
-	function handleNameKeyDown(
-		e: React.KeyboardEvent<HTMLInputElement>,
-		id: string,
-	) {
+	function handleNameKeyDown(e: React.KeyboardEvent<HTMLInputElement>, id: string) {
 		if (e.key === "Enter") {
 			const trimmed = e.currentTarget.value.trim();
 			if (trimmed) {
@@ -111,11 +103,7 @@ export default function CohortManager({ open, onClose }: CohortManagerProps) {
 									type="button"
 									className="flex size-6 shrink-0 items-center justify-center rounded hover:bg-accent"
 									title="Change color"
-									onClick={() =>
-										setEditingColorId(
-											editingColorId === cohort.id ? null : cohort.id,
-										)
-									}
+									onClick={() => setEditingColorId(editingColorId === cohort.id ? null : cohort.id)}
 								>
 									<span
 										className="inline-block size-3 rounded-full ring-1 ring-white/10"
@@ -127,9 +115,7 @@ export default function CohortManager({ open, onClose }: CohortManagerProps) {
 								<Input
 									defaultValue={cohort.name}
 									className="h-7 flex-1 border-border bg-muted/60 px-2 text-xs text-foreground"
-									onBlur={(e) =>
-										handleNameBlur(cohort.id, e.currentTarget.value)
-									}
+									onBlur={(e) => handleNameBlur(cohort.id, e.currentTarget.value)}
 									onKeyDown={(e) => handleNameKeyDown(e, cohort.id)}
 								/>
 
@@ -179,9 +165,7 @@ export default function CohortManager({ open, onClose }: CohortManagerProps) {
 
 				{/* Add cohort */}
 				<div className="px-4 py-3">
-					<Label className="mb-1.5 text-xs text-muted-foreground">
-						Add Cohort
-					</Label>
+					<Label className="mb-1.5 text-xs text-muted-foreground">Add Cohort</Label>
 					<div className="flex items-center gap-2">
 						<span
 							className="inline-block size-3 shrink-0 rounded-full ring-1 ring-white/10"
