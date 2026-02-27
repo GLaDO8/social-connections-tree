@@ -19,7 +19,7 @@ import {
 	type RelationshipCategory,
 } from "@/lib/graph-config";
 import { computeDegreeStats, getVisualRadius } from "@/lib/graph-constants";
-import type { Person, Relationship, RelationshipType } from "@/types/graph";
+import type { Cohort, Person, Relationship, RelationshipType } from "@/types/graph";
 
 export interface LinkDatum extends SimulationLinkDatum<Person> {
 	id: string;
@@ -86,9 +86,185 @@ function makeRadialForce(bestBondToEgo: Map<string, BondStrength>, cx: number, c
 	});
 }
 
+/**
+ * Pre-position nodes based on cohort membership and bond-to-ego distance
+ * so the simulation starts from a sensible layout instead of a tight spiral.
+ */
+export function seedInitialPositions(
+	persons: Person[],
+	relationships: Relationship[],
+	cohorts: Cohort[],
+	cx: number,
+	cy: number,
+): void {
+	const bestBondToEgo = computeBestBondToEgo(persons, relationships);
+
+	// Build cohortId → member indices
+	const cohortMembers = new Map<string, Person[]>();
+	for (const c of cohorts) {
+		cohortMembers.set(c.id, []);
+	}
+	for (const p of persons) {
+		if (p.isEgo) continue;
+		for (const cid of p.cohortIds) {
+			cohortMembers.get(cid)?.push(p);
+		}
+	}
+
+	// Assign angular sectors to cohorts (evenly spaced)
+	const activeCohorts = cohorts.filter((c) => (cohortMembers.get(c.id)?.length ?? 0) > 0);
+	const cohortAngle = new Map<string, number>();
+	const sectorSize = activeCohorts.length > 0 ? (2 * Math.PI) / activeCohorts.length : 0;
+	for (let i = 0; i < activeCohorts.length; i++) {
+		cohortAngle.set(activeCohorts[i].id, i * sectorSize - Math.PI / 2);
+	}
+
+	// Track which nodes have been positioned
+	const positioned = new Set<string>();
+
+	// Position ego at center
+	for (const p of persons) {
+		if (p.isEgo) {
+			p.x = cx;
+			p.y = cy;
+			positioned.add(p.id);
+		}
+	}
+
+	// Position cohort members in their sector
+	for (const p of persons) {
+		if (positioned.has(p.id)) continue;
+		if (p.cohortIds.length === 0) continue;
+
+		// Compute average angle across all cohorts this person belongs to
+		let angleSum = 0;
+		let angleCount = 0;
+		for (const cid of p.cohortIds) {
+			const a = cohortAngle.get(cid);
+			if (a !== undefined) {
+				angleSum += a;
+				angleCount++;
+			}
+		}
+		if (angleCount === 0) continue;
+
+		const angle = angleSum / angleCount;
+		const bond = bestBondToEgo.get(p.id);
+		const radius = bond ? BOND_RADIAL[bond] : 350;
+		// Add jitter to prevent exact overlap
+		const jitter = (Math.random() - 0.5) * radius * 0.3;
+		const angleJitter = (Math.random() - 0.5) * sectorSize * 0.4;
+
+		p.x = cx + Math.cos(angle + angleJitter) * (radius + jitter);
+		p.y = cy + Math.sin(angle + angleJitter) * (radius + jitter);
+		positioned.add(p.id);
+	}
+
+	// Position non-cohort nodes at their bond ring, spread around unclaimed angles
+	const unpositioned = persons.filter((p) => !positioned.has(p.id));
+	if (unpositioned.length > 0) {
+		// Find angles NOT occupied by cohorts — use gaps or a dedicated sector
+		const startAngle =
+			activeCohorts.length > 0
+				? activeCohorts.length * sectorSize - Math.PI / 2 + sectorSize * 0.5
+				: 0;
+		const spreadAngle = activeCohorts.length > 0 ? Math.min(sectorSize, Math.PI / 2) : 2 * Math.PI;
+
+		for (let i = 0; i < unpositioned.length; i++) {
+			const p = unpositioned[i];
+			const bond = bestBondToEgo.get(p.id);
+			const radius = bond ? BOND_RADIAL[bond] : 350;
+			const frac = unpositioned.length > 1 ? i / (unpositioned.length - 1) : 0.5;
+			const angle = startAngle + (frac - 0.5) * spreadAngle;
+			const jitter = (Math.random() - 0.5) * radius * 0.2;
+
+			p.x = cx + Math.cos(angle) * (radius + jitter);
+			p.y = cy + Math.sin(angle) * (radius + jitter);
+		}
+	}
+}
+
+/**
+ * Custom d3 force that pulls nodes toward their cohort centroid(s).
+ * Multi-cohort nodes get pulled toward the average of their cohort centroids (Venn effect).
+ */
+export function forceCohortCluster(persons: Person[], cohorts: Cohort[], strength: number) {
+	let nodes: Person[] = persons;
+
+	function force(alpha: number) {
+		// Compute live centroid of each cohort
+		const centroidX = new Map<string, number>();
+		const centroidY = new Map<string, number>();
+		const centroidCount = new Map<string, number>();
+
+		for (const c of cohorts) {
+			centroidX.set(c.id, 0);
+			centroidY.set(c.id, 0);
+			centroidCount.set(c.id, 0);
+		}
+
+		for (const p of nodes) {
+			if (p.isEgo) continue;
+			for (const cid of p.cohortIds) {
+				if (centroidX.has(cid)) {
+					centroidX.set(cid, centroidX.get(cid)! + (p.x ?? 0));
+					centroidY.set(cid, centroidY.get(cid)! + (p.y ?? 0));
+					centroidCount.set(cid, centroidCount.get(cid)! + 1);
+				}
+			}
+		}
+
+		// Finalize centroids
+		for (const c of cohorts) {
+			const count = centroidCount.get(c.id) ?? 0;
+			if (count > 0) {
+				centroidX.set(c.id, centroidX.get(c.id)! / count);
+				centroidY.set(c.id, centroidY.get(c.id)! / count);
+			}
+		}
+
+		// Pull each node toward its cohort centroid(s)
+		for (const p of nodes) {
+			if (p.isEgo) continue;
+			if (p.cohortIds.length === 0) continue;
+
+			let targetX = 0;
+			let targetY = 0;
+			let validCohorts = 0;
+
+			for (const cid of p.cohortIds) {
+				const count = centroidCount.get(cid) ?? 0;
+				if (count > 1) {
+					// Only pull if there are other members (not just self)
+					targetX += centroidX.get(cid)!;
+					targetY += centroidY.get(cid)!;
+					validCohorts++;
+				}
+			}
+
+			if (validCohorts === 0) continue;
+
+			targetX /= validCohorts;
+			targetY /= validCohorts;
+
+			const px = p.x ?? 0;
+			const py = p.y ?? 0;
+			p.vx = (p.vx ?? 0) + (targetX - px) * strength * alpha;
+			p.vy = (p.vy ?? 0) + (targetY - py) * strength * alpha;
+		}
+	}
+
+	force.initialize = (_nodes: Person[]) => {
+		nodes = _nodes;
+	};
+
+	return force;
+}
+
 export function createSimulation(
 	persons: Person[],
 	relationships: Relationship[],
+	cohorts: Cohort[],
 	width: number,
 	height: number,
 ): Simulation<Person, LinkDatum> {
@@ -98,6 +274,9 @@ export function createSimulation(
 
 	const cx = width / 2;
 	const cy = height / 2;
+
+	// Seed positions before simulation starts
+	seedInitialPositions(persons, relationships, cohorts, cx, cy);
 
 	const simulation = forceSimulation<Person, LinkDatum>(persons)
 		.force(
@@ -131,6 +310,7 @@ export function createSimulation(
 				.iterations(PHYSICS.collideIterations),
 		)
 		.force("radial", makeRadialForce(bestBondToEgo, cx, cy))
+		.force("cluster", forceCohortCluster(persons, cohorts, PHYSICS.clusterStrength))
 		.alphaDecay(PHYSICS.alphaDecay)
 		.alphaMin(PHYSICS.alphaMin)
 		.velocityDecay(PHYSICS.velocityDecay);
@@ -148,8 +328,21 @@ export function syncData(
 	simulation: Simulation<Person, LinkDatum>,
 	persons: Person[],
 	relationships: Relationship[],
+	cohorts: Cohort[],
 ): void {
 	const links = toLinks(relationships, persons);
+
+	// Seed positions for newly added nodes that have no x/y yet
+	const centerForce = simulation.force("center") as
+		| ReturnType<typeof forceCenter<Person>>
+		| undefined;
+	const cx = centerForce?.x() ?? 0;
+	const cy = centerForce?.y() ?? 0;
+
+	const newNodes = persons.filter((p) => p.x == null && p.y == null && !p.isEgo);
+	if (newNodes.length > 0) {
+		seedInitialPositions(newNodes, relationships, cohorts, cx, cy);
+	}
 
 	simulation.nodes(persons);
 
@@ -175,13 +368,8 @@ export function syncData(
 
 	const bestBondToEgo = computeBestBondToEgo(persons, relationships);
 
-	const centerForce = simulation.force("center") as
-		| ReturnType<typeof forceCenter<Person>>
-		| undefined;
-	const cx = centerForce?.x() ?? 0;
-	const cy = centerForce?.y() ?? 0;
-
 	simulation.force("radial", makeRadialForce(bestBondToEgo, cx, cy));
+	simulation.force("cluster", forceCohortCluster(persons, cohorts, PHYSICS.clusterStrength));
 
 	reheat(simulation);
 }

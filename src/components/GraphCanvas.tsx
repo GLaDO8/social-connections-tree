@@ -85,6 +85,7 @@ export default function GraphCanvas({ devSettingsRef, onScheduleRender }: GraphC
 	const { simulationRef } = useForceSimulation(
 		state.persons,
 		state.relationships,
+		state.cohorts,
 		width,
 		height,
 		scheduleRender,

@@ -109,6 +109,12 @@ export const PHYSICS = {
 	reheatAlpha: 0.3,
 	radialStrengthNode: 0.15,
 	radialStrengthEgo: 1,
+	// Cohort clustering
+	clusterStrength: 0.12,
+	clusterWarmupStrength: 0.3,
+	warmupTicks: 80,
+	warmupRadialStrength: 0.4,
+	postWarmupAlpha: 0.2,
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
