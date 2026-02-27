@@ -39,50 +39,9 @@ Interactive web app for ego-centric social connection graphs. Canvas + d3-force 
 
 ## Data Model
 
-```typescript
-// src/types/graph.ts — core data (what gets persisted)
+Four core types in `src/types/graph.ts`: **Person** (name, cohortIds, isEgo), **Relationship** (sourceId, targetId, type, label), **Cohort** (name, color), and **SocialGraph** (the root container with persons, relationships, cohorts, metadata). d3-force adds `x, y, vx, vy, fx, fy` to Person at runtime — these are not persisted.
 
-interface Cohort { id: string; name: string; color: string; }
-
-interface Person {
-  id: string;
-  name: string;
-  cohortIds: string[];
-  isEgo: boolean;
-  notes?: string;
-  x?: number; y?: number;         // d3-force mutates in-place
-  vx?: number; vy?: number;
-  fx?: number | null; fy?: number | null;
-}
-
-type RelationshipType =
-  | 'friend' | 'close_friend' | 'best_friend' | 'childhood_friend'
-  | 'partner' | 'ex' | 'crush'
-  | 'colleague' | 'classmate' | 'roommate'
-  | 'family' | 'sibling'
-  | 'acquaintance' | 'other';
-
-interface Relationship {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  type: RelationshipType;
-  label?: string;
-  notes?: string;
-}
-
-interface SocialGraph {
-  persons: Person[];
-  relationships: Relationship[];
-  cohorts: Cohort[];
-  activeCohortId: string | null;
-  metadata: { title: string; createdAt: string; updatedAt: string; };
-}
-
-// src/lib/relationship-config.ts — derived from RelationshipType (not stored)
-// getCategory(type) → 'default' | 'romantic' | 'family' | 'professional'
-// getBondStrength(type) → 1..5
-```
+See `src/types/CLAUDE.md` for the full type reference.
 
 ---
 
@@ -130,108 +89,26 @@ Operations use names (not IDs). Client resolves names to IDs with fuzzy matching
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- Header: title, cohort dropdown filter, settings
-- Canvas: full page, physics simulation
-- Properties: floating panel on right, appears on node/edge selection
-- Chat: bottom-docked, collapsible, shows message history + input
-- Zoom controls: floating bottom-right
+---
+
+## Directory Guide
+
+| Directory | What lives there | Deep docs |
+|-----------|-----------------|-----------|
+| `src/lib/` | Physics, rendering, state, NL resolver, config | `src/lib/CLAUDE.md` |
+| `src/components/` | React UI components (canvas, chat, panels, chrome) | `src/components/CLAUDE.md` |
+| `src/hooks/` | Canvas + persistence lifecycle hooks | `src/hooks/CLAUDE.md` |
+| `src/app/` | Next.js shell + API routes | `src/app/CLAUDE.md` |
+| `src/types/` | Data model + operation types | `src/types/CLAUDE.md` |
+| `src/context/` | GraphContext provider (state + undo/redo) | `src/context/GraphContext.tsx` |
+| `specs/` | Feature specifications | `specs/README.md` |
+| `plans/` | Implementation phase plans | `plans/README.md` |
 
 ---
 
-## Architecture
+## Workflow: Feature → Spec → Plan → Execute → Complete
 
-### Physics + Rendering
-```
-d3-force (physics engine)          Canvas 2D (renderer)
-├── Runs continuously (~60 tps)    ├── On each tick: clear → draw edges → draw nodes → draw labels
-├── Forces:                        ├── Nodes: filled circles + name label below
-│   forceLink (bondStrength →      ├── Edges: lines colored by category (gray/pink/yellow/blue)
-│     shorter distance)            ├── Selected: glow ring on active node
-│   forceManyBody (repulsion)      ├── Hovered: tooltip with name + relationship label
-│   forceCenter (viewport center)  └── Cohort highlight: ring on active cohort members
-│   forceCollide (prevent overlap)
-│   forceX/Y to ego (ego stays center)
-└── On change: alpha(0.3) → graph breathes and settles
-```
-
-### State Management
-- React useReducer manages SocialGraph
-- d3-force holds refs to same Person/Relationship arrays, mutates positions in-place
-- Canvas renders from simulation positions — no React re-render per tick
-- React re-renders only for UI (chat, properties panel, cohort selector)
-
-### NL Pipeline
-```
-Chat input → POST /api/parse-input
-  → { input, existingPersonNames[], existingCohortNames[] }
-  → Claude (Zod structured output) → GraphOperation[]
-  → Client applies operations → reducer updates → simulation reheats
-  → Chat shows confirmation message
-```
-
----
-
-## Source File Structure
-
-```
-src/
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── globals.css
-│   └── api/parse-input/route.ts      // NL → Claude → operations
-├── types/
-│   ├── graph.ts                      // Person, Relationship, Cohort, SocialGraph
-│   ├── operations.ts                 // GraphOperation types
-│   └── dev-settings.ts               // DevSettings + defaults
-├── lib/
-│   ├── relationship-config.ts        // category + bond strength derived from type
-│   ├── graph-reducer.ts              // useReducer: all CRUD actions
-│   ├── apply-operations.ts           // NL operations → reducer dispatches
-│   ├── graph-utils.ts                // name resolution, fuzzy match, uuid
-│   ├── persistence.ts                // localStorage + JSON import/export
-│   ├── force-config.ts               // d3-force setup + forces
-│   ├── canvas-renderer.ts            // Canvas 2D: draw nodes, edges, labels, highlights
-│   ├── hit-testing.ts                // click position → which node/edge
-│   └── prompt.ts                     // Claude system prompt + context builder
-├── context/
-│   └── GraphContext.tsx              // state + dispatch + selection + simulation ref
-├── components/
-│   ├── GraphCanvas.tsx               // <canvas> + simulation + render loop + zoom
-│   ├── ChatInput.tsx                 // Bottom-docked NL chat panel
-│   ├── PropertiesPanel.tsx           // Floating edit panel for selected items
-│   ├── ContextMenu.tsx               // Right-click menu
-│   ├── Header.tsx                    // Title, cohort dropdown, settings
-│   ├── CanvasToolbar.tsx             // Zoom buttons
-│   ├── CohortManager.tsx            // Create/edit cohorts (in settings)
-│   └── DevPanel.tsx                  // Dial Kit-inspired visual mapping controls
-└── hooks/
-    ├── useForceSimulation.ts         // d3-force lifecycle
-    ├── useCanvasRenderer.ts          // requestAnimationFrame loop
-    ├── useCanvasInteractions.ts      // click, drag, hover, zoom
-    └── useAutoSave.ts                // debounced localStorage save
-```
-
----
-
-## Workflow: Feature → Spec → Plan → Tasks → Execute
-
-### 1. SPEC — When a new feature or change is discussed/decided:
-- Create `specs/<feature>.md` with the "what" (behavior, rules, layouts, edge cases)
-- Update `specs/README.md` index with the new entry
-
-### 2. PLAN — When implementation of a spec begins:
-- Create `plans/<feature>.md` from the spec — the "how"
-- Break into numbered, granular tasks with clear inputs/outputs
-- Mark task dependencies (which tasks can run in parallel)
-- Update `plans/README.md` index
-
-### 3. EXECUTE — Run tasks from the plan:
-- Launch independent tasks as parallel sub-agents
-- Run dependent tasks sequentially
-- Each sub-agent gets: task description + relevant spec + relevant source files
-
-### 4. COMPLETE — After execution:
-- Update spec status to "implemented"
-- Update plan status to "done"
-- Verify against spec's acceptance criteria
+1. **SPEC** — Create `specs/<feature>.md` (the "what": behavior, rules, edge cases). Update `specs/README.md`.
+2. **PLAN** — Create `plans/<feature>.md` (the "how": numbered tasks, dependencies, inputs/outputs). Update `plans/README.md`.
+3. **EXECUTE** — Launch independent tasks as parallel sub-agents, dependent tasks sequentially. Each sub-agent gets: task description + relevant spec + source files.
+4. **COMPLETE** — Update spec/plan status. Verify against spec's acceptance criteria.
