@@ -185,9 +185,9 @@ export default function GraphCanvas({
 			const ds = devSettingsRefRef.current?.current?.current;
 			const hitNode = hitTestNode(
 				s.persons,
+				s.relationships,
 				cx,
 				cy,
-				ds?.nodeRadius,
 				ds?.egoRadius,
 			);
 			const hitEdge = hitNode

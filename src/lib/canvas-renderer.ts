@@ -2,7 +2,7 @@ import type { RelationshipCategory } from "@/lib/relationship-config";
 import { getBondStrength, getCategory } from "@/lib/relationship-config";
 import type { DevSettings } from "@/types/dev-settings";
 import type { Cohort, Person, Relationship } from "@/types/graph";
-import { EGO_RADIUS, NODE_RADIUS } from "./graph-constants";
+import { EGO_RADIUS, getVisualRadius, NODE_RADIUS } from "./graph-constants";
 
 const FALLBACK_EDGE_COLORS: Record<RelationshipCategory, string> = {
 	default: "#999999",
@@ -122,12 +122,52 @@ export function render(
 	const viewMaxY = (height - transform.y) / transform.k;
 	const viewPadding = 50;
 
-	// 3. Draw edges — batched by style to reduce draw calls
-	const edgeBatches = new Map<
-		string,
-		{ sx: number; sy: number; tx: number; ty: number }[]
-	>();
+	// 3. Build adjacency + degree data for hover-highlight and node sizing
+	const degreeMap = new Map<string, number>();
+	const egoIds = new Set<string>();
+	for (const p of persons) {
+		if (p.isEgo) egoIds.add(p.id);
+	}
+	for (const rel of relationships) {
+		degreeMap.set(rel.sourceId, (degreeMap.get(rel.sourceId) ?? 0) + 1);
+		degreeMap.set(rel.targetId, (degreeMap.get(rel.targetId) ?? 0) + 1);
+	}
+	// maxDegree among non-ego nodes only — ego's degree dominates and flattens sizing
+	let maxDegree = 1;
+	for (const [id, deg] of degreeMap) {
+		if (!egoIds.has(id) && deg > maxDegree) maxDegree = deg;
+	}
 
+	// When a node is hovered, compute which nodes/edges are adjacent
+	const highlightNodeIds = new Set<string>();
+	const highlightEdgeIds = new Set<string>();
+	const isHighlighting = hoveredNodeId != null;
+
+	if (hoveredNodeId) {
+		highlightNodeIds.add(hoveredNodeId);
+		for (const rel of relationships) {
+			if (rel.sourceId === hoveredNodeId) {
+				highlightNodeIds.add(rel.targetId);
+				highlightEdgeIds.add(rel.id);
+			} else if (rel.targetId === hoveredNodeId) {
+				highlightNodeIds.add(rel.sourceId);
+				highlightEdgeIds.add(rel.id);
+			}
+		}
+	}
+
+	const DIMMED_ALPHA = 0.04; // near-invisible when not connected to hovered node
+
+	// Bond strength → edge opacity: strong bonds are prominent, weak bonds are faint
+	const BOND_OPACITY: Record<number, number> = {
+		5: 0.9,
+		4: 0.7,
+		3: 0.5,
+		2: 0.3,
+		1: 0.2,
+	};
+
+	// 4. Draw edges
 	for (const rel of relationships) {
 		const source = personMap.get(rel.sourceId);
 		const target = personMap.get(rel.targetId);
@@ -140,7 +180,7 @@ export function render(
 		)
 			continue;
 
-		// Skip edges entirely outside viewport
+		// Viewport culling
 		const minEdgeX = Math.min(source.x, target.x);
 		const maxEdgeX = Math.max(source.x, target.x);
 		const minEdgeY = Math.min(source.y, target.y);
@@ -153,40 +193,46 @@ export function render(
 		)
 			continue;
 
+		const isEdgeHighlighted = highlightEdgeIds.has(rel.id);
 		const category = getCategory(rel.type);
 		const color = edgeColors[category] ?? edgeColors.default;
+		const bs = getBondStrength(rel.type);
+
 		let lw: number;
+		let alpha: number;
+
 		if (rel.id === selectedEdgeId) {
 			lw = selectedEdgeWidth;
-		} else if (bondToThickness) {
-			const bs = getBondStrength(rel.type);
-			lw = edgeWidthMin + ((bs - 1) / 4) * (edgeWidthMax - edgeWidthMin);
+			alpha = 1;
+		} else if (isHighlighting && isEdgeHighlighted) {
+			// Highlighted edges: thicker + full color
+			lw = bondToThickness
+				? edgeWidthMin + ((bs - 1) / 4) * (edgeWidthMax - edgeWidthMin)
+				: 1.5 + ((bs - 1) / 4) * 2.5; // 1.5 → 4.0
+			alpha = 1;
+		} else if (isHighlighting) {
+			// Dimmed edges: near-invisible
+			lw = 0.5;
+			alpha = DIMMED_ALPHA;
 		} else {
-			lw = edgeWidth;
+			// Default: vary by bond strength
+			lw = bondToThickness
+				? edgeWidthMin + ((bs - 1) / 4) * (edgeWidthMax - edgeWidthMin)
+				: 0.5 + ((bs - 1) / 4) * 1.5;
+			alpha = BOND_OPACITY[bs] ?? 0.5;
 		}
-		const key = `${color}:${lw}`;
 
-		let batch = edgeBatches.get(key);
-		if (!batch) {
-			batch = [];
-			edgeBatches.set(key, batch);
-		}
-		batch.push({ sx: source.x, sy: source.y, tx: target.x, ty: target.y });
-	}
-
-	for (const [key, edges] of edgeBatches) {
-		const colonIdx = key.lastIndexOf(":");
-		ctx.strokeStyle = key.slice(0, colonIdx);
-		ctx.lineWidth = Number(key.slice(colonIdx + 1));
+		ctx.strokeStyle = color;
+		ctx.lineWidth = lw;
+		ctx.globalAlpha = alpha;
 		ctx.beginPath();
-		for (const e of edges) {
-			ctx.moveTo(e.sx, e.sy);
-			ctx.lineTo(e.tx, e.ty);
-		}
+		ctx.moveTo(source.x, source.y);
+		ctx.lineTo(target.x, target.y);
 		ctx.stroke();
 	}
+	ctx.globalAlpha = 1;
 
-	// 4. Draw nodes
+	// 5. Draw nodes
 	const labelFont = `${labelSize}px sans-serif`;
 	ctx.font = labelFont;
 	ctx.textAlign = "center";
@@ -197,7 +243,7 @@ export function render(
 	for (const person of persons) {
 		if (person.x == null || person.y == null) continue;
 
-		// Skip nodes entirely outside viewport
+		// Viewport culling
 		if (
 			person.x < viewMinX - viewPadding ||
 			person.x > viewMaxX + viewPadding ||
@@ -205,6 +251,8 @@ export function render(
 			person.y > viewMaxY + viewPadding
 		)
 			continue;
+
+		const isNodeHighlighted = highlightNodeIds.has(person.id);
 
 		// Compute fade-in opacity for recently added nodes
 		const addedAt = (person as any)._addedAt;
@@ -215,9 +263,17 @@ export function render(
 				nodeAlpha = elapsed / FADE_DURATION;
 			}
 		}
+		// Apply hover dimming
+		if (isHighlighting && !isNodeHighlighted) {
+			nodeAlpha *= DIMMED_ALPHA;
+		}
 		ctx.globalAlpha = nodeAlpha;
 
-		const baseRadius = person.isEgo ? egoRadius : nodeRadius;
+		// Degree-proportional radius
+		const degree = degreeMap.get(person.id) ?? 0;
+		const baseRadius = person.isEgo
+			? (vs?.egoRadius ?? EGO_RADIUS)
+			: getVisualRadius(degree, maxDegree, false);
 		const cohortId = person.cohortIds[0];
 		const color = cohortId
 			? (cohortColorMap.get(cohortId) ?? defaultNodeColor)
@@ -268,16 +324,19 @@ export function render(
 			ctx.stroke();
 		}
 
-		// Label (hidden when zoomed out below 40%)
-		if (showLabels && transform.k > 0.4) {
+		// Label — show for highlighted nodes even at low zoom, use LOD otherwise
+		const showLabel =
+			showLabels &&
+			(isNodeHighlighted || !isHighlighting) &&
+			(isHighlighting || transform.k > 0.4);
+		if (showLabel) {
 			ctx.fillStyle = labelColor;
 			ctx.fillText(person.name, person.x, person.y + drawRadius + labelOffset);
 		}
 
-		// Restore full opacity after drawing this node
 		ctx.globalAlpha = 1;
 	}
 
-	// 5. Restore context
+	// 6. Restore context
 	ctx.restore();
 }

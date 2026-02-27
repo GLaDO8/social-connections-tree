@@ -1,15 +1,17 @@
 import { type Quadtree, quadtree } from "d3-quadtree";
 import type { Person, Relationship } from "@/types/graph";
-import { EGO_RADIUS, NODE_RADIUS } from "./graph-constants";
+import { EGO_RADIUS, getVisualRadius } from "./graph-constants";
 
 const EDGE_HIT_THRESHOLD = 5;
 
 // ---------------------------------------------------------------------------
-// Cached quadtree — rebuilt only when invalidateHitTestCache() is called
-// (typically on each simulation tick, not on every mouse event).
+// Cached quadtree + degree data — rebuilt only when invalidateHitTestCache()
+// is called (typically on each simulation tick, not on every mouse event).
 // ---------------------------------------------------------------------------
 
 let cachedTree: Quadtree<Person & { x: number; y: number }> | null = null;
+let cachedDegreeMap: Map<string, number> = new Map();
+let cachedMaxDegree = 1;
 let cacheGeneration = 0;
 let treeBuildGeneration = -1;
 
@@ -17,11 +19,20 @@ export function invalidateHitTestCache(): void {
 	cacheGeneration++;
 }
 
-function getQuadtree(
+function ensureCache(
 	persons: Person[],
-): Quadtree<Person & { x: number; y: number }> | null {
+	relationships: Relationship[],
+): {
+	tree: Quadtree<Person & { x: number; y: number }>;
+	degreeMap: Map<string, number>;
+	maxDegree: number;
+} | null {
 	if (cachedTree && treeBuildGeneration === cacheGeneration) {
-		return cachedTree;
+		return {
+			tree: cachedTree,
+			degreeMap: cachedDegreeMap,
+			maxDegree: cachedMaxDegree,
+		};
 	}
 
 	const tree = quadtree<Person & { x: number; y: number }>()
@@ -37,9 +48,31 @@ function getQuadtree(
 	// Check if any nodes were added
 	if (tree.extent() === undefined) return null;
 
+	// Build degree map for visual radius computation
+	const degreeMap = new Map<string, number>();
+	const egoIds = new Set<string>();
+	for (const p of persons) {
+		if (p.isEgo) egoIds.add(p.id);
+	}
+	for (const r of relationships) {
+		degreeMap.set(r.sourceId, (degreeMap.get(r.sourceId) ?? 0) + 1);
+		degreeMap.set(r.targetId, (degreeMap.get(r.targetId) ?? 0) + 1);
+	}
+	// maxDegree among non-ego nodes only
+	let maxDegree = 1;
+	for (const [id, deg] of degreeMap) {
+		if (!egoIds.has(id) && deg > maxDegree) maxDegree = deg;
+	}
+
 	cachedTree = tree;
+	cachedDegreeMap = degreeMap;
+	cachedMaxDegree = maxDegree;
 	treeBuildGeneration = cacheGeneration;
-	return cachedTree;
+	return {
+		tree: cachedTree,
+		degreeMap: cachedDegreeMap,
+		maxDegree: cachedMaxDegree,
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -80,17 +113,19 @@ function pointToSegmentDistance(
 
 export function hitTestNode(
 	persons: Person[],
+	relationships: Relationship[],
 	x: number,
 	y: number,
-	customNodeRadius?: number,
 	customEgoRadius?: number,
 ): Person | null {
-	const nr = customNodeRadius ?? NODE_RADIUS;
-	const er = customEgoRadius ?? EGO_RADIUS;
-	const searchRadius = Math.max(nr, er);
+	const cache = ensureCache(persons, relationships);
+	if (!cache) return null;
 
-	const tree = getQuadtree(persons);
-	if (!tree) return null;
+	const { tree, degreeMap, maxDegree } = cache;
+	const er = customEgoRadius ?? EGO_RADIUS;
+
+	// Search with the maximum possible radius (ego or largest hub node)
+	const searchRadius = Math.max(er, 30);
 
 	const nearest = tree.find(x, y, searchRadius);
 	if (!nearest) return null;
@@ -98,7 +133,8 @@ export function hitTestNode(
 	const dx = x - nearest.x;
 	const dy = y - nearest.y;
 	const dist = Math.sqrt(dx * dx + dy * dy);
-	const radius = nearest.isEgo ? er : nr;
+	const degree = degreeMap.get(nearest.id) ?? 0;
+	const radius = getVisualRadius(degree, maxDegree, nearest.isEgo);
 
 	return dist <= radius ? nearest : null;
 }

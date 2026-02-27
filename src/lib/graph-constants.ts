@@ -2,7 +2,23 @@ import type { BondStrength } from "@/lib/relationship-config";
 import type { RelationshipType } from "@/types/graph";
 
 export const NODE_RADIUS = 12;
-export const EGO_RADIUS = 16;
+export const EGO_RADIUS = 20;
+
+// Degree-proportional node sizing (sqrt scaling)
+const MIN_NODE_RADIUS = 7;
+const MAX_NODE_RADIUS = 18;
+
+/** Compute visual radius for a node based on its connection count. */
+export function getVisualRadius(
+	degree: number,
+	maxDegree: number,
+	isEgo: boolean,
+): number {
+	if (isEgo) return EGO_RADIUS;
+	if (maxDegree <= 1) return NODE_RADIUS;
+	const normalized = Math.sqrt(degree) / Math.sqrt(maxDegree);
+	return MIN_NODE_RADIUS + normalized * (MAX_NODE_RADIUS - MIN_NODE_RADIUS);
+}
 
 export const MAX_NAME_LENGTH = 100;
 export const MAX_NOTES_LENGTH = 2000;
