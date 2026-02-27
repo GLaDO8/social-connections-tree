@@ -15,7 +15,11 @@ export type GraphOperation =
 	| { op: "add_cohort"; data: { name: string } }
 	| {
 			op: "update_person";
-			data: { name: string; updates: { name?: string; notes?: string } };
+			data: {
+				name: string;
+				updates: { name?: string; notes?: string };
+				cohortNames?: string[];
+			};
 	  }
 	| {
 			op: "update_relationship";

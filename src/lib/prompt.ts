@@ -20,6 +20,7 @@ RULES:
 - Every person must have at least one relationship. No orphan nodes.
 - Only create persons/cohorts that don't already exist (check the existing lists below)
 - For batch input like "A, B, C are my college friends" → create cohort, all persons, all relationships
+- To assign EXISTING people to a cohort → use update_person with cohortNames (e.g. "A, B belong to X cohort")
 - For corrections like "actually X is close" → use update_relationship
 - If the user says something conversational (greeting, question, etc.) with no graph intent, respond with text only — do NOT call any tools
 

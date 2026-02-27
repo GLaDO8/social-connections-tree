@@ -110,7 +110,7 @@ export function resolveOperations(
 
 	function act(action: GraphAction) {
 		actions.push(action);
-		// Track additions in local state for name resolution by subsequent ops.
+		// Track mutations in local state for name/cohort resolution by subsequent ops.
 		// Use the same ID we pass to the reducer so relationships reference
 		// the correct person/cohort.
 		if (action.type === "ADD_PERSON" && action.payload.id) {
@@ -120,6 +120,15 @@ export function resolveOperations(
 					...currentState.persons,
 					{ ...action.payload, id: action.payload.id } as Person,
 				],
+			};
+		}
+		if (action.type === "UPDATE_PERSON") {
+			const { id, ...updates } = action.payload;
+			currentState = {
+				...currentState,
+				persons: currentState.persons.map((p) =>
+					p.id === id ? { ...p, ...updates } : p,
+				),
 			};
 		}
 		if (action.type === "ADD_COHORT" && action.payload.id) {
@@ -154,13 +163,29 @@ export function resolveOperations(
 			}
 
 			case "add_person": {
+				// Helper: resolve cohort name → ID, auto-creating if missing
+				const resolveCohortIds = (names: string[]): string[] =>
+					names.map((cn) => {
+						const existing = findCohortByName(currentState.cohorts, cn);
+						if (existing) return existing.id;
+						// Auto-create missing cohort
+						const color =
+							DEFAULT_COHORT_COLORS[
+								currentState.cohorts.length % DEFAULT_COHORT_COLORS.length
+							];
+						const id = crypto.randomUUID();
+						act({
+							type: "ADD_COHORT",
+							payload: { id, name: cn, color },
+						});
+						return id;
+					});
+
 				const existing = findPersonByName(currentState.persons, op.data.name);
 				if (existing) {
 					// Person already exists — add cohorts if specified
 					if (op.data.cohortNames?.length) {
-						const cohortIds = op.data.cohortNames
-							.map((cn) => findCohortByName(currentState.cohorts, cn)?.id)
-							.filter((id): id is string => id != null);
+						const cohortIds = resolveCohortIds(op.data.cohortNames);
 						const newCohortIds = cohortIds.filter(
 							(id) => !existing.cohortIds.includes(id),
 						);
@@ -177,9 +202,7 @@ export function resolveOperations(
 					}
 					break;
 				}
-				const cohortIds = (op.data.cohortNames ?? [])
-					.map((cn) => findCohortByName(currentState.cohorts, cn)?.id)
-					.filter((id): id is string => id != null);
+				const cohortIds = resolveCohortIds(op.data.cohortNames ?? []);
 				act({
 					type: "ADD_PERSON",
 					payload: {
@@ -246,10 +269,50 @@ export function resolveOperations(
 			case "update_person": {
 				const person = findPersonByName(currentState.persons, op.data.name);
 				if (!person) break;
-				act({
-					type: "UPDATE_PERSON",
-					payload: { id: person.id, ...op.data.updates },
-				});
+
+				// Handle cohort assignment
+				if (op.data.cohortNames?.length) {
+					const cohortIds = op.data.cohortNames
+						.map((cn) => {
+							const existing = findCohortByName(currentState.cohorts, cn);
+							if (existing) return existing.id;
+							// Auto-create missing cohort
+							const color =
+								DEFAULT_COHORT_COLORS[
+									currentState.cohorts.length % DEFAULT_COHORT_COLORS.length
+								];
+							const id = crypto.randomUUID();
+							act({
+								type: "ADD_COHORT",
+								payload: { id, name: cn, color },
+							});
+							return id;
+						})
+						.filter((id): id is string => id != null);
+					const newCohortIds = cohortIds.filter(
+						(id) => !person.cohortIds.includes(id),
+					);
+					if (newCohortIds.length > 0) {
+						act({
+							type: "UPDATE_PERSON",
+							payload: {
+								id: person.id,
+								cohortIds: [...person.cohortIds, ...newCohortIds],
+							},
+						});
+						for (const cid of newCohortIds) affectedCohortIds.add(cid);
+					}
+				}
+
+				// Handle other updates (name, notes)
+				const hasOtherUpdates =
+					op.data.updates.name || op.data.updates.notes !== undefined;
+				if (hasOtherUpdates) {
+					act({
+						type: "UPDATE_PERSON",
+						payload: { id: person.id, ...op.data.updates },
+					});
+				}
 				break;
 			}
 

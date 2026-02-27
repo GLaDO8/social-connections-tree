@@ -62,6 +62,7 @@ const GraphOperationSchema = z.discriminatedUnion("op", [
 				name: z.string().optional(),
 				notes: z.string().optional(),
 			}),
+			cohortNames: z.array(z.string()).optional(),
 		}),
 	}),
 	z.object({
@@ -183,7 +184,8 @@ const tools: Anthropic.Tool[] = [
 	},
 	{
 		name: "update_person",
-		description: "Update an existing person's details.",
+		description:
+			"Update an existing person's details or assign them to cohorts.",
 		input_schema: {
 			type: "object" as const,
 			properties: {
@@ -196,6 +198,12 @@ const tools: Anthropic.Tool[] = [
 					description: "New name for the person (if renaming)",
 				},
 				notes: { type: "string", description: "Notes about the person" },
+				cohortNames: {
+					type: "array",
+					items: { type: "string" },
+					description:
+						"Cohort/group names to assign this person to (e.g. ['IIITB', 'College'])",
+				},
 			},
 			required: ["name"],
 		},
@@ -300,7 +308,11 @@ function toolCallToOperation(toolName: string, input: ToolInput): any {
 			if (input.notes) updates.notes = input.notes;
 			return {
 				op: "update_person",
-				data: { name: input.name!, updates },
+				data: {
+					name: input.name!,
+					updates,
+					...(input.cohortNames && { cohortNames: input.cohortNames }),
+				},
 			};
 		}
 		case "update_relationship": {
