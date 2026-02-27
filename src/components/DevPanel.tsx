@@ -2,38 +2,34 @@
 
 import { useDialKit } from "dialkit";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ForceSimulation, LinkDatum } from "@/lib/force-config";
-import { DEV_SETTINGS_DEFAULTS, type DevSettings } from "@/types/dev-settings";
+import { VISUAL_DEFAULTS, type VisualSettings } from "@/lib/graph-config";
 
 const STORAGE_KEY = "sct-dev-settings";
 
-function loadPersistedSettings(): DevSettings {
-	if (typeof window === "undefined") return DEV_SETTINGS_DEFAULTS;
+function loadPersistedSettings(): VisualSettings {
+	if (typeof window === "undefined") return VISUAL_DEFAULTS;
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (raw) {
 			const parsed = JSON.parse(raw);
 			if (typeof parsed === "object" && parsed !== null) {
-				// Validate each field matches the expected type from defaults
-				// to prevent corrupted values (e.g. null from NaN serialization)
-				// from breaking DialKit's slider tuple detection
 				const validated: Record<string, unknown> = {};
-				for (const [key, defaultVal] of Object.entries(DEV_SETTINGS_DEFAULTS)) {
+				for (const [key, defaultVal] of Object.entries(VISUAL_DEFAULTS)) {
 					const saved = parsed[key];
 					if (saved !== undefined && typeof saved === typeof defaultVal) {
 						validated[key] = saved;
 					}
 				}
-				return { ...DEV_SETTINGS_DEFAULTS, ...validated };
+				return { ...VISUAL_DEFAULTS, ...validated };
 			}
 		}
 	} catch {
 		// ignore
 	}
-	return DEV_SETTINGS_DEFAULTS;
+	return VISUAL_DEFAULTS;
 }
 
-function saveSettings(settings: DevSettings) {
+function saveSettings(settings: VisualSettings) {
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 	} catch {
@@ -42,21 +38,16 @@ function saveSettings(settings: DevSettings) {
 }
 
 interface DevPanelProps {
-	simulationRef: React.RefObject<React.RefObject<ForceSimulation | null> | null>;
-	onSettingsRef?: (ref: React.MutableRefObject<DevSettings>) => void;
+	onSettingsRef?: (ref: React.MutableRefObject<VisualSettings>) => void;
 }
 
 interface DevPanelInnerProps extends DevPanelProps {
 	onReset: () => void;
 }
 
-function DevPanelInner({
-	simulationRef,
-	onSettingsRef,
-	onReset,
-}: DevPanelInnerProps) {
+function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 	const [persisted] = useState(loadPersistedSettings);
-	const settingsRef = useRef<DevSettings>({ ...persisted });
+	const settingsRef = useRef<VisualSettings>({ ...persisted });
 
 	// Expose settings ref to parent on mount
 	useEffect(() => {
@@ -66,46 +57,8 @@ function DevPanelInner({
 	const d = persisted;
 
 	const p = useDialKit(
-		"Dev Controls",
+		"Visual Controls",
 		{
-			physics: {
-				repulsion: [d.repulsion, -1000, -100, 10] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				linkDistanceMultiplier: [d.linkDistanceMultiplier, 0.5, 3, 0.1] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				alphaDecay: [d.alphaDecay, 0.005, 0.1, 0.005] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				collisionPadding: [d.collisionPadding, 0, 30, 1] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				velocityDecay: [d.velocityDecay, 0.1, 0.9, 0.05] as [
-					number,
-					number,
-					number,
-					number,
-				],
-				centerStrength: [d.centerStrength, 0, 2, 0.1] as [
-					number,
-					number,
-					number,
-					number,
-				],
-			},
 			nodes: {
 				_collapsed: true,
 				nodeRadius: [d.nodeRadius, 5, 30, 1] as [
@@ -155,7 +108,6 @@ function DevPanelInner({
 				],
 			},
 			bondMapping: {
-				bondToDistance: d.bondToDistance,
 				bondToThickness: d.bondToThickness,
 			},
 			edges: {
@@ -206,7 +158,6 @@ function DevPanelInner({
 				canvasBgColor: d.canvasBgColor,
 			},
 			reset: { type: "action" as const, label: "Reset" },
-			reheat: { type: "action" as const, label: "Reheat" },
 		},
 		{
 			onAction: (action: string) => {
@@ -214,26 +165,14 @@ function DevPanelInner({
 					localStorage.removeItem(STORAGE_KEY);
 					onReset();
 				}
-				if (action === "reheat") {
-					const sim = simulationRef.current?.current;
-					if (sim) sim.alpha(0.3).restart();
-				}
 			},
 		},
 	);
 
-	// Sync DialKit proxy values → settingsRef + localStorage + physics
+	// Sync DialKit proxy values → settingsRef + localStorage
 	useEffect(() => {
-		const next: DevSettings = {
-			// Physics
-			repulsion: p.physics.repulsion,
-			linkDistanceMultiplier: p.physics.linkDistanceMultiplier,
-			alphaDecay: p.physics.alphaDecay,
-			collisionPadding: p.physics.collisionPadding,
-			velocityDecay: p.physics.velocityDecay,
-			centerStrength: p.physics.centerStrength,
+		const next: VisualSettings = {
 			// Bond mapping
-			bondToDistance: p.bondMapping.bondToDistance,
 			bondToThickness: p.bondMapping.bondToThickness,
 			// Nodes
 			nodeRadius: p.nodes.nodeRadius,
@@ -266,52 +205,7 @@ function DevPanelInner({
 
 		settingsRef.current = next;
 		saveSettings(next);
-
-		// Apply physics to simulation
-		const sim = simulationRef.current?.current;
-		if (!sim) return;
-
-		const charge = sim.force("charge");
-		if (charge && "strength" in charge) {
-			(charge as { strength: (v: number) => void }).strength(next.repulsion);
-		}
-
-		const link = sim.force("link");
-		if (link && "distance" in link) {
-			(link as { distance: (fn: (d: LinkDatum) => number) => void }).distance(
-				(ld: LinkDatum) =>
-					next.bondToDistance
-						? (300 - ld.bondStrength * 50) * next.linkDistanceMultiplier
-						: 150 * next.linkDistanceMultiplier,
-			);
-		}
-
-		sim.alphaDecay(next.alphaDecay);
-		sim.velocityDecay(next.velocityDecay);
-
-		const collide = sim.force("collide");
-		if (collide && "radius" in collide) {
-			(collide as { radius: (v: number) => void }).radius(
-				next.collisionPadding + next.nodeRadius,
-			);
-		}
-
-		const center = sim.force("center");
-		if (center && "strength" in center) {
-			(center as { strength: (v: number) => void }).strength(
-				next.centerStrength,
-			);
-		}
-
-		sim.alpha(0.3).restart();
 	}, [
-		p.physics.repulsion,
-		p.physics.linkDistanceMultiplier,
-		p.physics.alphaDecay,
-		p.physics.collisionPadding,
-		p.physics.velocityDecay,
-		p.physics.centerStrength,
-		p.bondMapping.bondToDistance,
 		p.bondMapping.bondToThickness,
 		p.nodes.nodeRadius,
 		p.nodes.egoRadius,
@@ -336,20 +230,16 @@ function DevPanelInner({
 		p.labels.labelOffset,
 		p.labels.showLabels,
 		p.canvas.canvasBgColor,
-		simulationRef,
 	]);
 
 	return null;
 }
 
-export default function DevPanel({
-	simulationRef,
-	onSettingsRef,
-}: DevPanelProps) {
+export default function DevPanel({ onSettingsRef }: DevPanelProps) {
 	const [resetKey, setResetKey] = useState(0);
 
 	const onSettingsRefStable = useCallback(
-		(ref: React.MutableRefObject<DevSettings>) => {
+		(ref: React.MutableRefObject<VisualSettings>) => {
 			onSettingsRef?.(ref);
 		},
 		[onSettingsRef],
@@ -362,7 +252,6 @@ export default function DevPanel({
 	return (
 		<DevPanelInner
 			key={resetKey}
-			simulationRef={simulationRef}
 			onSettingsRef={onSettingsRefStable}
 			onReset={handleReset}
 		/>

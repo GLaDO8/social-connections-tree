@@ -1,12 +1,7 @@
 import { type Quadtree, quadtree } from "d3-quadtree";
+import { EDGE_HIT_THRESHOLD, EGO_RADIUS } from "@/lib/graph-config";
 import type { Person, Relationship } from "@/types/graph";
-import {
-	computeDegreeStats,
-	EGO_RADIUS,
-	getVisualRadius,
-} from "./graph-constants";
-
-const EDGE_HIT_THRESHOLD = 5;
+import { computeDegreeStats, getVisualRadius } from "./graph-constants";
 
 // ---------------------------------------------------------------------------
 // Cached quadtree + degree data — rebuilt only when invalidateHitTestCache()

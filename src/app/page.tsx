@@ -12,25 +12,15 @@ import KeyboardShortcuts from "@/components/KeyboardShortcuts";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GraphProvider } from "@/context/GraphContext";
-import type { ForceSimulation } from "@/lib/force-config";
-import type { DevSettings } from "@/types/dev-settings";
+import type { VisualSettings } from "@/lib/graph-config";
 
 export default function Home() {
 	const [cohortManagerOpen, setCohortManagerOpen] = useState(false);
-	const simulationRefHolder =
-		useRef<React.RefObject<ForceSimulation | null> | null>(null);
 	const devSettingsRefHolder =
-		useRef<React.MutableRefObject<DevSettings> | null>(null);
-
-	const handleSimulationReady = useCallback(
-		(ref: React.RefObject<ForceSimulation | null>) => {
-			simulationRefHolder.current = ref;
-		},
-		[],
-	);
+		useRef<React.MutableRefObject<VisualSettings> | null>(null);
 
 	const handleDevSettingsRef = useCallback(
-		(ref: React.MutableRefObject<DevSettings>) => {
+		(ref: React.MutableRefObject<VisualSettings>) => {
 			devSettingsRefHolder.current = ref;
 		},
 		[],
@@ -43,10 +33,7 @@ export default function Home() {
 				<div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
 					<Header onSettingsClick={() => setCohortManagerOpen(true)} />
 					<div className="flex-1 relative">
-						<GraphCanvas
-							onSimulationReady={handleSimulationReady}
-							devSettingsRef={devSettingsRefHolder}
-						/>
+						<GraphCanvas devSettingsRef={devSettingsRefHolder} />
 					</div>
 					<ChatInput />
 					<PropertiesPanel />
@@ -54,10 +41,7 @@ export default function Home() {
 						open={cohortManagerOpen}
 						onClose={() => setCohortManagerOpen(false)}
 					/>
-					<DevPanel
-						simulationRef={simulationRefHolder}
-						onSettingsRef={handleDevSettingsRef}
-					/>
+					<DevPanel onSettingsRef={handleDevSettingsRef} />
 					<DialRoot position="top-left" defaultOpen={false} />
 				</div>
 			</TooltipProvider>

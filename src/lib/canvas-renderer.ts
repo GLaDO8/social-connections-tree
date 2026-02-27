@@ -1,7 +1,14 @@
-import type { RelationshipCategory } from "@/lib/relationship-config";
-import { getBondStrength, getCategory } from "@/lib/relationship-config";
-import type { DevSettings } from "@/types/dev-settings";
-import { DEV_SETTINGS_DEFAULTS } from "@/types/dev-settings";
+import {
+	BOND_OPACITY,
+	DIMMED_ALPHA,
+	FADE_DURATION,
+	getBondStrength,
+	getCategory,
+	type RelationshipCategory,
+	VIEW_PADDING,
+	VISUAL_DEFAULTS,
+	type VisualSettings,
+} from "@/lib/graph-config";
 import type { Cohort, Person, Relationship } from "@/types/graph";
 import { computeDegreeStats, getVisualRadius } from "./graph-constants";
 
@@ -31,7 +38,7 @@ export function render(
 		width: number;
 		height: number;
 		transform: { x: number; y: number; k: number };
-		visualSettings?: DevSettings;
+		visualSettings?: VisualSettings;
 	},
 ): void {
 	const {
@@ -45,8 +52,8 @@ export function render(
 		visualSettings: vs,
 	} = options;
 
-	// Derive all visual params — default to DEV_SETTINGS_DEFAULTS
-	const d = vs ?? DEV_SETTINGS_DEFAULTS;
+	// Derive all visual params — default to VISUAL_DEFAULTS
+	const d = vs ?? VISUAL_DEFAULTS;
 	const {
 		defaultNodeColor,
 		nodeBorderWidth,
@@ -103,8 +110,6 @@ export function render(
 	const viewMinY = -transform.y / transform.k;
 	const viewMaxX = (width - transform.x) / transform.k;
 	const viewMaxY = (height - transform.y) / transform.k;
-	const viewPadding = 50;
-
 	// 3. Build adjacency + degree data for hover-highlight and node sizing
 	const { degreeMap, maxDegree } = computeDegreeStats(persons, relationships);
 
@@ -126,17 +131,6 @@ export function render(
 		}
 	}
 
-	const DIMMED_ALPHA = 0.04; // near-invisible when not connected to hovered node
-
-	// Bond strength → edge opacity: strong bonds are prominent, weak bonds are faint
-	const BOND_OPACITY: Record<number, number> = {
-		5: 0.9,
-		4: 0.7,
-		3: 0.5,
-		2: 0.3,
-		1: 0.2,
-	};
-
 	// 4. Draw edges
 	for (const rel of relationships) {
 		const source = personMap.get(rel.sourceId);
@@ -156,10 +150,10 @@ export function render(
 		const minEdgeY = Math.min(source.y, target.y);
 		const maxEdgeY = Math.max(source.y, target.y);
 		if (
-			maxEdgeX < viewMinX - viewPadding ||
-			minEdgeX > viewMaxX + viewPadding ||
-			maxEdgeY < viewMinY - viewPadding ||
-			minEdgeY > viewMaxY + viewPadding
+			maxEdgeX < viewMinX - VIEW_PADDING ||
+			minEdgeX > viewMaxX + VIEW_PADDING ||
+			maxEdgeY < viewMinY - VIEW_PADDING ||
+			minEdgeY > viewMaxY + VIEW_PADDING
 		)
 			continue;
 
@@ -208,17 +202,15 @@ export function render(
 	ctx.textAlign = "center";
 	ctx.textBaseline = "top";
 
-	const FADE_DURATION = 300;
-
 	for (const person of persons) {
 		if (person.x == null || person.y == null) continue;
 
 		// Viewport culling
 		if (
-			person.x < viewMinX - viewPadding ||
-			person.x > viewMaxX + viewPadding ||
-			person.y < viewMinY - viewPadding ||
-			person.y > viewMaxY + viewPadding
+			person.x < viewMinX - VIEW_PADDING ||
+			person.x > viewMaxX + VIEW_PADDING ||
+			person.y < viewMinY - VIEW_PADDING ||
+			person.y > viewMaxY + VIEW_PADDING
 		)
 			continue;
 

@@ -2,8 +2,8 @@
 
 import { type DragBehavior, drag as d3Drag } from "d3-drag";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { VisualSettings } from "@/lib/graph-config";
 import { hitTestEdge, hitTestNode } from "@/lib/hit-testing";
-import type { DevSettings } from "@/types/dev-settings";
 import type { Person, Relationship } from "@/types/graph";
 
 const DRAG_THRESHOLD = 5;
@@ -25,7 +25,7 @@ export function useCanvasInteractions(
 		onSelectNode: (id: string | null) => void;
 		onSelectEdge: (id: string | null) => void;
 	},
-	devSettingsRef?: React.RefObject<React.MutableRefObject<DevSettings> | null>,
+	devSettingsRef?: React.RefObject<React.MutableRefObject<VisualSettings> | null>,
 ): {
 	dragBehavior: DragBehavior<HTMLCanvasElement, unknown, unknown>;
 	hoveredNodeId: string | null;

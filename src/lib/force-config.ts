@@ -8,12 +8,17 @@ import {
 	type Simulation,
 	type SimulationLinkDatum,
 } from "d3-force";
+import {
+	BOND_DISTANCE,
+	BOND_LINK_STRENGTH,
+	BOND_RADIAL,
+	type BondStrength,
+	getBondStrength,
+	getCategory,
+	PHYSICS,
+	type RelationshipCategory,
+} from "@/lib/graph-config";
 import { computeDegreeStats, getVisualRadius } from "@/lib/graph-constants";
-import type {
-	BondStrength,
-	RelationshipCategory,
-} from "@/lib/relationship-config";
-import { getBondStrength, getCategory } from "@/lib/relationship-config";
 import type { Person, Relationship, RelationshipType } from "@/types/graph";
 
 export interface LinkDatum extends SimulationLinkDatum<Person> {
@@ -25,33 +30,6 @@ export interface LinkDatum extends SimulationLinkDatum<Person> {
 }
 
 export type ForceSimulation = Simulation<Person, LinkDatum>;
-
-// Bond strength → link distance: closer bond = shorter link
-const BOND_DISTANCE: Record<BondStrength, number> = {
-	5: 60, // inseparable — very close
-	4: 100, // close
-	3: 160, // moderate
-	2: 220, // casual
-	1: 300, // distant
-};
-
-// Bond strength → link rigidity: stronger bond = more rigid
-const BOND_STRENGTH: Record<BondStrength, number> = {
-	5: 0.85,
-	4: 0.6,
-	3: 0.4,
-	2: 0.2,
-	1: 0.1,
-};
-
-// Bond strength → radial target distance from ego (for concentric rings)
-const BOND_RADIAL: Record<BondStrength, number> = {
-	5: 100,
-	4: 180,
-	3: 280,
-	2: 380,
-	1: 500,
-};
 
 function toLinks(
 	relationships: Relationship[],
@@ -115,8 +93,8 @@ function makeRadialForce(
 		cx,
 		cy,
 	).strength((d) => {
-		if (d.isEgo) return 1;
-		return 0.15;
+		if (d.isEgo) return PHYSICS.radialStrengthEgo;
+		return PHYSICS.radialStrengthNode;
 	});
 }
 
@@ -138,7 +116,7 @@ export function createSimulation(
 			"link",
 			forceLink<Person, LinkDatum>(links)
 				.id((d) => d.id)
-				.strength((d) => BOND_STRENGTH[d.bondStrength])
+				.strength((d) => BOND_LINK_STRENGTH[d.bondStrength])
 				.distance((d) => BOND_DISTANCE[d.bondStrength]),
 		)
 		.force(
@@ -150,31 +128,34 @@ export function createSimulation(
 					// Charge proportional to -radius^2 prevents hub collapse
 					return -(r * r) / 2;
 				})
-				.distanceMax(500),
+				.distanceMax(PHYSICS.chargeDistanceMax),
 		)
-		.force("center", forceCenter<Person>(cx, cy).strength(0.05))
+		.force(
+			"center",
+			forceCenter<Person>(cx, cy).strength(PHYSICS.centerStrength),
+		)
 		.force(
 			"collide",
 			forceCollide<Person>()
 				.radius((d) => {
 					const degree = degreeMap.get(d.id) ?? 0;
 					const r = getVisualRadius(degree, maxDegree, d.isEgo);
-					return r + 6 + Math.min(degree * 1.5, 12);
+					return r + PHYSICS.collisionPadding + Math.min(degree * 1.5, 12);
 				})
-				.strength(0.8)
-				.iterations(2),
+				.strength(PHYSICS.collideStrength)
+				.iterations(PHYSICS.collideIterations),
 		)
 		.force("radial", makeRadialForce(bestBondToEgo, cx, cy))
-		.alphaDecay(0.012)
-		.alphaMin(0.001)
-		.velocityDecay(0.35);
+		.alphaDecay(PHYSICS.alphaDecay)
+		.alphaMin(PHYSICS.alphaMin)
+		.velocityDecay(PHYSICS.velocityDecay);
 
 	return simulation;
 }
 
 /** Bump alpha and restart the simulation to re-settle nodes. */
 export function reheat(simulation: Simulation<Person, LinkDatum>): void {
-	simulation.alpha(0.3).restart();
+	simulation.alpha(PHYSICS.reheatAlpha).restart();
 }
 
 /** Replace nodes and links, then reheat so the simulation re-settles. */

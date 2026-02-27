@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useGraph } from "@/context/GraphContext";
 import { resolveOperations } from "@/lib/apply-operations";
-import { RELATIONSHIP_TYPES } from "@/lib/graph-constants";
+import { RELATIONSHIP_TYPES } from "@/lib/graph-config";
 import type { RelationshipType } from "@/types/graph";
 import type { ParseInputResponse } from "@/types/operations";
 

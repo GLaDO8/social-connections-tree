@@ -1,4 +1,4 @@
-import { DEFAULT_COHORT_COLORS } from "@/lib/graph-constants";
+import { DEFAULT_COHORT_COLORS } from "@/lib/graph-config";
 import type { GraphAction } from "@/lib/graph-reducer";
 import { graphReducer } from "@/lib/graph-reducer";
 import type {

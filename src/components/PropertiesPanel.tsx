@@ -19,9 +19,12 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useGraph } from "@/context/GraphContext";
 import { generateCohortCompletionActions } from "@/lib/apply-operations";
-import { BOND_LABELS, RELATIONSHIP_TYPES } from "@/lib/graph-constants";
+import {
+	BOND_LABELS,
+	getBondStrength,
+	RELATIONSHIP_TYPES,
+} from "@/lib/graph-config";
 import { graphReducer } from "@/lib/graph-reducer";
-import { getBondStrength } from "@/lib/relationship-config";
 import type { RelationshipType } from "@/types/graph";
 
 // ---------------------------------------------------------------------------

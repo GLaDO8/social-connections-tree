@@ -9,13 +9,11 @@ import { useGraph } from "@/context/GraphContext";
 import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
 import { useForceSimulation } from "@/hooks/useForceSimulation";
 import { render } from "@/lib/canvas-renderer";
-import type { ForceSimulation } from "@/lib/force-config";
+import type { VisualSettings } from "@/lib/graph-config";
 import { hitTestEdge, hitTestNode } from "@/lib/hit-testing";
-import type { DevSettings } from "@/types/dev-settings";
 
 interface GraphCanvasProps {
-	onSimulationReady?: (ref: React.RefObject<ForceSimulation | null>) => void;
-	devSettingsRef?: React.RefObject<React.MutableRefObject<DevSettings> | null>;
+	devSettingsRef?: React.RefObject<React.MutableRefObject<VisualSettings> | null>;
 }
 
 interface ContextMenuState {
@@ -25,10 +23,7 @@ interface ContextMenuState {
 	edgeId: string | null;
 }
 
-export default function GraphCanvas({
-	onSimulationReady,
-	devSettingsRef,
-}: GraphCanvasProps = {}) {
+export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
 	const {
 		state,
 		selectedNodeId,
@@ -99,11 +94,6 @@ export default function GraphCanvas({
 		height,
 		scheduleRender,
 	);
-
-	// Expose simulation ref to parent (for DevPanel)
-	useEffect(() => {
-		onSimulationReady?.(simulationRef);
-	}, [onSimulationReady, simulationRef]);
 
 	// Canvas interactions (click, drag, hover)
 	const { dragBehavior, hoveredNodeId, hoveredPosition } =
