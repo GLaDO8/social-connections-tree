@@ -14,6 +14,7 @@ import { hitTestEdge, hitTestNode } from "@/lib/hit-testing";
 
 interface GraphCanvasProps {
 	devSettingsRef?: React.RefObject<React.MutableRefObject<VisualSettings> | null>;
+	onScheduleRender?: (fn: () => void) => void;
 }
 
 interface ContextMenuState {
@@ -23,7 +24,7 @@ interface ContextMenuState {
 	edgeId: string | null;
 }
 
-export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
+export default function GraphCanvas({ devSettingsRef, onScheduleRender }: GraphCanvasProps = {}) {
 	const { state, selectedNodeId, selectedEdgeId, setSelectedNodeId, setSelectedEdgeId } =
 		useGraph();
 
@@ -74,6 +75,11 @@ export default function GraphCanvas({ devSettingsRef }: GraphCanvasProps = {}) {
 			});
 		});
 	}, []);
+
+	// Expose scheduleRender to parent
+	useEffect(() => {
+		onScheduleRender?.(scheduleRender);
+	}, [onScheduleRender, scheduleRender]);
 
 	// Force simulation — onTick triggers canvas redraw
 	const { simulationRef } = useForceSimulation(

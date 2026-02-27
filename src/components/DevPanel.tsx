@@ -39,13 +39,14 @@ function saveSettings(settings: VisualSettings) {
 
 interface DevPanelProps {
 	onSettingsRef?: (ref: React.MutableRefObject<VisualSettings>) => void;
+	onSettingsChange?: () => void;
 }
 
 interface DevPanelInnerProps extends DevPanelProps {
 	onReset: () => void;
 }
 
-function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
+function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInnerProps) {
 	const [persisted] = useState(loadPersistedSettings);
 	const settingsRef = useRef<VisualSettings>({ ...persisted });
 
@@ -150,7 +151,9 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 
 		settingsRef.current = next;
 		saveSettings(next);
+		onSettingsChange?.();
 	}, [
+		onSettingsChange,
 		p.bondMapping.bondToThickness,
 		p.bondMapping.edgeWidthMin,
 		p.bondMapping.edgeWidthMax,
@@ -180,7 +183,7 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 	return null;
 }
 
-export default function DevPanel({ onSettingsRef }: DevPanelProps) {
+export default function DevPanel({ onSettingsRef, onSettingsChange }: DevPanelProps) {
 	const [resetKey, setResetKey] = useState(0);
 
 	const onSettingsRefStable = useCallback(
@@ -194,5 +197,12 @@ export default function DevPanel({ onSettingsRef }: DevPanelProps) {
 		setResetKey((k) => k + 1);
 	}, []);
 
-	return <DevPanelInner key={resetKey} onSettingsRef={onSettingsRefStable} onReset={handleReset} />;
+	return (
+		<DevPanelInner
+			key={resetKey}
+			onSettingsRef={onSettingsRefStable}
+			onSettingsChange={onSettingsChange}
+			onReset={handleReset}
+		/>
+	);
 }

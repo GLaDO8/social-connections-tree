@@ -20,6 +20,7 @@ function isTextInput(): boolean {
  * - Cmd+Shift+Z / Ctrl+Shift+Z → redo
  * - Delete / Backspace → remove selected node or edge
  * - Escape → deselect all
+ * - Cmd+Shift+D → toggle dev panel
  */
 export default function KeyboardShortcuts() {
 	const {
@@ -50,6 +51,14 @@ export default function KeyboardShortcuts() {
 				if (isTextInput()) return;
 				e.preventDefault();
 				redo();
+				return;
+			}
+
+			// Toggle dev panel: Cmd+Shift+D
+			if (mod && e.shiftKey && (e.key === "d" || e.key === "D")) {
+				e.preventDefault();
+				const header = document.querySelector<HTMLElement>(".dialkit-panel-header");
+				header?.click();
 				return;
 			}
 

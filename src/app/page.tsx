@@ -17,9 +17,18 @@ import type { VisualSettings } from "@/lib/graph-config";
 export default function Home() {
 	const [cohortManagerOpen, setCohortManagerOpen] = useState(false);
 	const devSettingsRefHolder = useRef<React.MutableRefObject<VisualSettings> | null>(null);
+	const scheduleRenderRef = useRef<(() => void) | null>(null);
 
 	const handleDevSettingsRef = useCallback((ref: React.MutableRefObject<VisualSettings>) => {
 		devSettingsRefHolder.current = ref;
+	}, []);
+
+	const handleScheduleRender = useCallback((fn: () => void) => {
+		scheduleRenderRef.current = fn;
+	}, []);
+
+	const handleSettingsChange = useCallback(() => {
+		scheduleRenderRef.current?.();
 	}, []);
 
 	return (
@@ -29,12 +38,15 @@ export default function Home() {
 				<div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
 					<Header onSettingsClick={() => setCohortManagerOpen(true)} />
 					<div className="flex-1 relative">
-						<GraphCanvas devSettingsRef={devSettingsRefHolder} />
+						<GraphCanvas
+							devSettingsRef={devSettingsRefHolder}
+							onScheduleRender={handleScheduleRender}
+						/>
 					</div>
 					<ChatInput />
 					<PropertiesPanel />
 					<CohortManager open={cohortManagerOpen} onClose={() => setCohortManagerOpen(false)} />
-					<DevPanel onSettingsRef={handleDevSettingsRef} />
+					<DevPanel onSettingsRef={handleDevSettingsRef} onSettingsChange={handleSettingsChange} />
 					<DialRoot position="top-left" defaultOpen={false} />
 				</div>
 			</TooltipProvider>
