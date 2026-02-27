@@ -1,17 +1,68 @@
+import { z } from "zod";
+import { stripPhysicsState } from "@/lib/graph-constants";
 import type { SocialGraph } from "@/types/graph";
 
 const STORAGE_KEY = "social-connections-tree:graph";
 
-/**
- * Strip d3-force physics state (x/y/vx/vy/fx/fy) from persons before saving.
- * These are transient — the simulation will recompute them on load.
- */
-function stripPhysicsState(graph: SocialGraph): SocialGraph {
-	return {
-		...graph,
-		persons: graph.persons.map(({ x, y, vx, vy, fx, fy, ...rest }) => rest),
-	};
+// ---------------------------------------------------------------------------
+// Zod schema for validating loaded/imported graph data
+// ---------------------------------------------------------------------------
+
+const CohortSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	color: z.string(),
+});
+
+const PersonSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	cohortIds: z.array(z.string()),
+	isEgo: z.boolean(),
+	notes: z.string().optional(),
+	_addedAt: z.number().optional(),
+	x: z.number().optional(),
+	y: z.number().optional(),
+	vx: z.number().optional(),
+	vy: z.number().optional(),
+	fx: z.union([z.number(), z.null()]).optional(),
+	fy: z.union([z.number(), z.null()]).optional(),
+});
+
+const RelationshipSchema = z.object({
+	id: z.string(),
+	sourceId: z.string(),
+	targetId: z.string(),
+	type: z.string(),
+	label: z.string().optional(),
+	notes: z.string().optional(),
+});
+
+const SocialGraphSchema = z.object({
+	persons: z
+		.array(PersonSchema)
+		.refine((persons) => persons.some((p) => p.isEgo), {
+			message: "Graph must contain an ego node",
+		}),
+	relationships: z.array(RelationshipSchema),
+	cohorts: z.array(CohortSchema),
+	activeCohortId: z.union([z.string(), z.null()]),
+	metadata: z.object({
+		title: z.string(),
+		createdAt: z.string(),
+		updatedAt: z.string(),
+	}),
+});
+
+function validateGraph(data: unknown): SocialGraph | null {
+	const result = SocialGraphSchema.safeParse(data);
+	if (!result.success) return null;
+	return result.data as SocialGraph;
 }
+
+// ---------------------------------------------------------------------------
+// CRUD
+// ---------------------------------------------------------------------------
 
 export function saveGraph(graph: SocialGraph): void {
 	try {
@@ -27,15 +78,7 @@ export function loadGraph(): SocialGraph | null {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return null;
-		const parsed = JSON.parse(raw) as SocialGraph;
-		// Basic validation: must have persons array with an ego node
-		if (
-			!Array.isArray(parsed.persons) ||
-			!parsed.persons.some((p) => p.isEgo)
-		) {
-			return null;
-		}
-		return parsed;
+		return validateGraph(JSON.parse(raw));
 	} catch {
 		return null;
 	}
@@ -78,23 +121,8 @@ export function importGraphFromFile(): Promise<SocialGraph | null> {
 			const reader = new FileReader();
 			reader.onload = () => {
 				try {
-					const parsed = JSON.parse(reader.result as string) as SocialGraph;
-					// Basic validation
-					if (
-						!Array.isArray(parsed.persons) ||
-						!parsed.persons.some((p) => p.isEgo)
-					) {
-						resolve(null);
-						return;
-					}
-					if (
-						!Array.isArray(parsed.relationships) ||
-						!Array.isArray(parsed.cohorts)
-					) {
-						resolve(null);
-						return;
-					}
-					resolve(parsed);
+					const data = JSON.parse(reader.result as string);
+					resolve(validateGraph(data));
 				} catch {
 					resolve(null);
 				}

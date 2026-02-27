@@ -1,6 +1,10 @@
 import { type Quadtree, quadtree } from "d3-quadtree";
 import type { Person, Relationship } from "@/types/graph";
-import { EGO_RADIUS, getVisualRadius } from "./graph-constants";
+import {
+	computeDegreeStats,
+	EGO_RADIUS,
+	getVisualRadius,
+} from "./graph-constants";
 
 const EDGE_HIT_THRESHOLD = 5;
 
@@ -49,20 +53,7 @@ function ensureCache(
 	if (tree.extent() === undefined) return null;
 
 	// Build degree map for visual radius computation
-	const degreeMap = new Map<string, number>();
-	const egoIds = new Set<string>();
-	for (const p of persons) {
-		if (p.isEgo) egoIds.add(p.id);
-	}
-	for (const r of relationships) {
-		degreeMap.set(r.sourceId, (degreeMap.get(r.sourceId) ?? 0) + 1);
-		degreeMap.set(r.targetId, (degreeMap.get(r.targetId) ?? 0) + 1);
-	}
-	// maxDegree among non-ego nodes only
-	let maxDegree = 1;
-	for (const [id, deg] of degreeMap) {
-		if (!egoIds.has(id) && deg > maxDegree) maxDegree = deg;
-	}
+	const { degreeMap, maxDegree } = computeDegreeStats(persons, relationships);
 
 	cachedTree = tree;
 	cachedDegreeMap = degreeMap;

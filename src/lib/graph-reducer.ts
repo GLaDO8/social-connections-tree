@@ -83,7 +83,7 @@ export function graphReducer(
 				...rest,
 				id: providedId ?? crypto.randomUUID(),
 				_addedAt: Date.now(),
-			} as Person;
+			};
 			return withTimestamp({
 				...state,
 				persons: [...state.persons, person],
@@ -148,7 +148,7 @@ export function graphReducer(
 				...action.payload.person,
 				id: personId,
 				_addedAt: Date.now(),
-			} as Person;
+			};
 			const relationship: Relationship = {
 				...action.payload.relationship,
 				id: crypto.randomUUID(),

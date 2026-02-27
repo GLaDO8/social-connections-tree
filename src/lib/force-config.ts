@@ -8,7 +8,7 @@ import {
 	type Simulation,
 	type SimulationLinkDatum,
 } from "d3-force";
-import { getVisualRadius } from "@/lib/graph-constants";
+import { computeDegreeStats, getVisualRadius } from "@/lib/graph-constants";
 import type {
 	BondStrength,
 	RelationshipCategory,
@@ -62,6 +62,8 @@ function toLinks(
 		.filter((r) => idSet.has(r.sourceId) && idSet.has(r.targetId))
 		.map((r) => ({
 			id: r.id,
+			// d3-force's forceLink resolves string IDs → Person objects
+			// via the .id() accessor. The type mismatch is intentional.
 			source: r.sourceId as unknown as Person,
 			target: r.targetId as unknown as Person,
 			type: r.type,
@@ -71,6 +73,53 @@ function toLinks(
 		}));
 }
 
+/** Compute the strongest bond each person has to the ego node. */
+function computeBestBondToEgo(
+	persons: Person[],
+	relationships: Relationship[],
+): Map<string, BondStrength> {
+	const egoId = persons.find((p) => p.isEgo)?.id;
+	const bestBondToEgo = new Map<string, BondStrength>();
+	if (!egoId) return bestBondToEgo;
+	for (const r of relationships) {
+		const otherId =
+			r.sourceId === egoId
+				? r.targetId
+				: r.targetId === egoId
+					? r.sourceId
+					: null;
+		if (otherId) {
+			const bond = getBondStrength(r.type);
+			const current = bestBondToEgo.get(otherId);
+			if (!current || bond > current) {
+				bestBondToEgo.set(otherId, bond);
+			}
+		}
+	}
+	return bestBondToEgo;
+}
+
+/** Create a radial force that arranges nodes in concentric rings by bond to ego. */
+function makeRadialForce(
+	bestBondToEgo: Map<string, BondStrength>,
+	cx: number,
+	cy: number,
+) {
+	return forceRadial<Person>(
+		(d) => {
+			if (d.isEgo) return 0;
+			const bond = bestBondToEgo.get(d.id);
+			if (bond) return BOND_RADIAL[bond];
+			return 350; // nodes not directly connected to ego — outer ring
+		},
+		cx,
+		cy,
+	).strength((d) => {
+		if (d.isEgo) return 1;
+		return 0.15;
+	});
+}
+
 export function createSimulation(
 	persons: Person[],
 	relationships: Relationship[],
@@ -78,43 +127,11 @@ export function createSimulation(
 	height: number,
 ): Simulation<Person, LinkDatum> {
 	const links = toLinks(relationships, persons);
-
-	// Build degree map: how many connections each person has
-	const degreeMap = new Map<string, number>();
-	for (const r of relationships) {
-		degreeMap.set(r.sourceId, (degreeMap.get(r.sourceId) ?? 0) + 1);
-		degreeMap.set(r.targetId, (degreeMap.get(r.targetId) ?? 0) + 1);
-	}
-
-	// Build a map of each person's closest bond to ego (lowest bond = farthest ring)
-	const egoNode = persons.find((p) => p.isEgo);
-	const egoId = egoNode?.id;
-	const bestBondToEgo = new Map<string, BondStrength>();
-	if (egoId) {
-		for (const r of relationships) {
-			const otherId =
-				r.sourceId === egoId
-					? r.targetId
-					: r.targetId === egoId
-						? r.sourceId
-						: null;
-			if (otherId) {
-				const bond = getBondStrength(r.type);
-				const current = bestBondToEgo.get(otherId);
-				if (!current || bond > current) {
-					bestBondToEgo.set(otherId, bond);
-				}
-			}
-		}
-	}
+	const { degreeMap, maxDegree } = computeDegreeStats(persons, relationships);
+	const bestBondToEgo = computeBestBondToEgo(persons, relationships);
 
 	const cx = width / 2;
 	const cy = height / 2;
-	// maxDegree among non-ego nodes — ego dominates and flattens sizing otherwise
-	let maxDegree = 1;
-	for (const [id, deg] of degreeMap) {
-		if (id !== egoId && deg > maxDegree) maxDegree = deg;
-	}
 
 	const simulation = forceSimulation<Person, LinkDatum>(persons)
 		.force(
@@ -142,30 +159,12 @@ export function createSimulation(
 				.radius((d) => {
 					const degree = degreeMap.get(d.id) ?? 0;
 					const r = getVisualRadius(degree, maxDegree, d.isEgo);
-					// Visual radius + breathing room
 					return r + 6 + Math.min(degree * 1.5, 12);
 				})
 				.strength(0.8)
 				.iterations(2),
 		)
-		// Radial force: push nodes to concentric rings based on bond to ego
-		.force(
-			"radial",
-			forceRadial<Person>(
-				(d) => {
-					if (d.isEgo) return 0; // ego stays at center
-					const bond = bestBondToEgo.get(d.id);
-					if (bond) return BOND_RADIAL[bond];
-					// Nodes not directly connected to ego — outer ring
-					return 350;
-				},
-				cx,
-				cy,
-			).strength((d) => {
-				if (d.isEgo) return 1; // strong pull to center for ego
-				return 0.15; // gentle nudge — don't override link forces
-			}),
-		)
+		.force("radial", makeRadialForce(bestBondToEgo, cx, cy))
 		.alphaDecay(0.012)
 		.alphaMin(0.001)
 		.velocityDecay(0.35);
@@ -195,19 +194,8 @@ export function syncData(
 		linkForce.links(links);
 	}
 
-	// Rebuild degree map for updated charge & collide
-	const degreeMap = new Map<string, number>();
-	for (const r of relationships) {
-		degreeMap.set(r.sourceId, (degreeMap.get(r.sourceId) ?? 0) + 1);
-		degreeMap.set(r.targetId, (degreeMap.get(r.targetId) ?? 0) + 1);
-	}
+	const { degreeMap, maxDegree } = computeDegreeStats(persons, relationships);
 
-	// Update collide radii (maxDegree among non-ego only)
-	const egoIdForSync = persons.find((p) => p.isEgo)?.id;
-	let maxDegree = 1;
-	for (const [id, deg] of degreeMap) {
-		if (id !== egoIdForSync && deg > maxDegree) maxDegree = deg;
-	}
 	const collideForce = simulation.force("collide") as
 		| ReturnType<typeof forceCollide<Person>>
 		| undefined;
@@ -219,51 +207,15 @@ export function syncData(
 		});
 	}
 
-	// Rebuild radial force with updated bond-to-ego map
-	const egoNode = persons.find((p) => p.isEgo);
-	const egoId = egoNode?.id;
-	const bestBondToEgo = new Map<string, BondStrength>();
-	if (egoId) {
-		for (const r of relationships) {
-			const otherId =
-				r.sourceId === egoId
-					? r.targetId
-					: r.targetId === egoId
-						? r.sourceId
-						: null;
-			if (otherId) {
-				const bond = getBondStrength(r.type);
-				const current = bestBondToEgo.get(otherId);
-				if (!current || bond > current) {
-					bestBondToEgo.set(otherId, bond);
-				}
-			}
-		}
-	}
+	const bestBondToEgo = computeBestBondToEgo(persons, relationships);
 
-	// Get center from the existing center force
 	const centerForce = simulation.force("center") as
 		| ReturnType<typeof forceCenter<Person>>
 		| undefined;
 	const cx = centerForce?.x() ?? 0;
 	const cy = centerForce?.y() ?? 0;
 
-	simulation.force(
-		"radial",
-		forceRadial<Person>(
-			(d) => {
-				if (d.isEgo) return 0;
-				const bond = bestBondToEgo.get(d.id);
-				if (bond) return BOND_RADIAL[bond];
-				return 350;
-			},
-			cx,
-			cy,
-		).strength((d) => {
-			if (d.isEgo) return 1;
-			return 0.15;
-		}),
-	);
+	simulation.force("radial", makeRadialForce(bestBondToEgo, cx, cy));
 
 	reheat(simulation);
 }

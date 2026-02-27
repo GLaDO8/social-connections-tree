@@ -304,7 +304,40 @@ function DevPanelInner({
 		}
 
 		sim.alpha(0.3).restart();
-	});
+	}, [
+		p.physics.repulsion,
+		p.physics.linkDistanceMultiplier,
+		p.physics.alphaDecay,
+		p.physics.collisionPadding,
+		p.physics.velocityDecay,
+		p.physics.centerStrength,
+		p.bondMapping.bondToDistance,
+		p.bondMapping.bondToThickness,
+		p.nodes.nodeRadius,
+		p.nodes.egoRadius,
+		p.nodes.defaultNodeColor,
+		p.nodes.nodeBorderWidth,
+		p.nodes.nodeBorderColor,
+		p.nodes.hoverExpand,
+		p.nodes.selectedGlowOffset,
+		p.nodes.selectedGlowOpacity,
+		p.nodes.cohortRingOffset,
+		p.nodes.cohortRingWidth,
+		p.edges.edgeWidth,
+		p.edges.edgeWidthMin,
+		p.edges.edgeWidthMax,
+		p.edges.selectedEdgeWidth,
+		p.edges.edgeColorDefault,
+		p.edges.edgeColorRomantic,
+		p.edges.edgeColorFamily,
+		p.edges.edgeColorProfessional,
+		p.labels.labelColor,
+		p.labels.labelSize,
+		p.labels.labelOffset,
+		p.labels.showLabels,
+		p.canvas.canvasBgColor,
+		simulationRef,
+	]);
 
 	return null;
 }

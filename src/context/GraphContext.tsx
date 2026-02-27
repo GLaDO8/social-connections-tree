@@ -11,6 +11,7 @@ import {
 	useState,
 } from "react";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { stripPhysicsState } from "@/lib/graph-constants";
 import {
 	createInitialState,
 	type GraphAction,
@@ -24,14 +25,6 @@ import type { SocialGraph } from "@/types/graph";
 // ---------------------------------------------------------------------------
 
 const MAX_UNDO_STEPS = 50;
-
-/** Strip d3-force physics state from a graph for snapshotting. */
-function createSnapshot(graph: SocialGraph): SocialGraph {
-	return {
-		...graph,
-		persons: graph.persons.map(({ x, y, vx, vy, fx, fy, ...rest }) => rest),
-	};
-}
 
 // ---------------------------------------------------------------------------
 // Context shape
@@ -94,7 +87,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 	const dispatch = useCallback(
 		(action: GraphAction) => {
 			if (!NON_MUTATING_ACTIONS.has(action.type)) {
-				pushUndo(createSnapshot(stateRef.current));
+				pushUndo(stripPhysicsState(stateRef.current));
 			}
 			rawDispatch(action);
 		},
@@ -109,7 +102,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 				(a) => !NON_MUTATING_ACTIONS.has(a.type),
 			);
 			if (hasMutation) {
-				pushUndo(createSnapshot(stateRef.current));
+				pushUndo(stripPhysicsState(stateRef.current));
 			}
 			for (const action of actions) {
 				rawDispatch(action);
@@ -123,7 +116,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 		if (stack.length === 0) return;
 		const snapshot = stack[stack.length - 1];
 		stack.length -= 1;
-		redoStackRef.current.push(createSnapshot(stateRef.current));
+		redoStackRef.current.push(stripPhysicsState(stateRef.current));
 		rawDispatch({ type: "RESTORE_SNAPSHOT", payload: snapshot });
 		setUndoRedoVersion((v) => v + 1);
 	}, []);
@@ -133,7 +126,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 		if (stack.length === 0) return;
 		const snapshot = stack[stack.length - 1];
 		stack.length -= 1;
-		undoStackRef.current.push(createSnapshot(stateRef.current));
+		undoStackRef.current.push(stripPhysicsState(stateRef.current));
 		rawDispatch({ type: "RESTORE_SNAPSHOT", payload: snapshot });
 		setUndoRedoVersion((v) => v + 1);
 	}, []);

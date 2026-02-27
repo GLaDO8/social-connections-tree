@@ -97,8 +97,8 @@ const ResponseSchema = z.object({
 
 const RequestSchema = z.object({
 	input: z.string().min(1).max(2000),
-	existingPersonNames: z.array(z.string()),
-	existingCohortNames: z.array(z.string()),
+	existingPersonNames: z.array(z.string()).max(500),
+	existingCohortNames: z.array(z.string()).max(500),
 });
 
 // ---------------------------------------------------------------------------
@@ -222,12 +222,6 @@ const tools: Anthropic.Tool[] = [
 					description: "New relationship type",
 				},
 				label: { type: "string", description: "New edge label" },
-				bondStrength: {
-					type: "integer",
-					description: "New bond strength (1-5)",
-					minimum: 1,
-					maximum: 5,
-				},
 				notes: {
 					type: "string",
 					description:
@@ -266,20 +260,23 @@ const tools: Anthropic.Tool[] = [
 // Transform tool calls → GraphOperation format
 // ---------------------------------------------------------------------------
 
+type RelType = z.infer<typeof RelationshipTypeEnum>;
+
 interface ToolInput {
 	name?: string;
 	cohortNames?: string[];
 	sourceName?: string;
 	targetName?: string;
-	type?: string;
+	type?: RelType;
 	label?: string;
-	bondStrength?: number;
 	newName?: string;
 	notes?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toolCallToOperation(toolName: string, input: ToolInput): any {
+function toolCallToOperation(
+	toolName: string,
+	input: ToolInput,
+): z.input<typeof GraphOperationSchema> {
 	switch (toolName) {
 		case "add_person":
 			return {
@@ -317,14 +314,12 @@ function toolCallToOperation(toolName: string, input: ToolInput): any {
 		}
 		case "update_relationship": {
 			const updates: {
-				type?: string;
+				type?: RelType;
 				label?: string;
-				bondStrength?: number;
 				notes?: string;
 			} = {};
 			if (input.type) updates.type = input.type;
 			if (input.label) updates.label = input.label;
-			if (input.bondStrength) updates.bondStrength = input.bondStrength;
 			if (input.notes !== undefined) updates.notes = input.notes;
 			return {
 				op: "update_relationship",
@@ -440,7 +435,9 @@ export async function POST(request: Request) {
 		return NextResponse.json(result.data);
 	} catch (error) {
 		console.error("Parse input error:", error);
-		const message = error instanceof Error ? error.message : "Unknown error";
-		return NextResponse.json({ error: message }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to process request" },
+			{ status: 500 },
+		);
 	}
 }

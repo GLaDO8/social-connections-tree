@@ -1,31 +1,16 @@
 import type { RelationshipCategory } from "@/lib/relationship-config";
 import { getBondStrength, getCategory } from "@/lib/relationship-config";
 import type { DevSettings } from "@/types/dev-settings";
+import { DEV_SETTINGS_DEFAULTS } from "@/types/dev-settings";
 import type { Cohort, Person, Relationship } from "@/types/graph";
-import { EGO_RADIUS, getVisualRadius, NODE_RADIUS } from "./graph-constants";
-
-const FALLBACK_EDGE_COLORS: Record<RelationshipCategory, string> = {
-	default: "#999999",
-	romantic: "#FF69B4",
-	family: "#FFD700",
-	professional: "#4A90D9",
-};
-
-const FALLBACK_DEFAULT_NODE_COLOR = "#6B7280";
-const FALLBACK_LABEL_COLOR = "#D1D5DB";
-
-const brightenCache = new Map<string, string>();
+import { computeDegreeStats, getVisualRadius } from "./graph-constants";
 
 function brighten(hex: string): string {
-	const cached = brightenCache.get(hex);
-	if (cached) return cached;
 	const r = parseInt(hex.slice(1, 3), 16);
 	const g = parseInt(hex.slice(3, 5), 16);
 	const b = parseInt(hex.slice(5, 7), 16);
 	const mix = (c: number) => Math.min(255, c + 40);
-	const result = `rgb(${mix(r)},${mix(g)},${mix(b)})`;
-	brightenCache.set(hex, result);
-	return result;
+	return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
 }
 
 function opacityToHexAlpha(opacity: number): string {
@@ -60,36 +45,34 @@ export function render(
 		visualSettings: vs,
 	} = options;
 
-	// Derive all visual params with fallbacks
-	const nodeRadius = vs?.nodeRadius ?? NODE_RADIUS;
-	const egoRadius = vs?.egoRadius ?? EGO_RADIUS;
-	const defaultNodeColor = vs?.defaultNodeColor ?? FALLBACK_DEFAULT_NODE_COLOR;
-	const nodeBorderWidth = vs?.nodeBorderWidth ?? 0;
-	const nodeBorderColor = vs?.nodeBorderColor ?? "#FFFFFF";
-	const hoverExpand = vs?.hoverExpand ?? 3;
-	const selectedGlowOffset = vs?.selectedGlowOffset ?? 6;
-	const selectedGlowOpacity = vs?.selectedGlowOpacity ?? 0.25;
-	const cohortRingOffset = vs?.cohortRingOffset ?? 4;
-	const cohortRingWidth = vs?.cohortRingWidth ?? 2;
-	const edgeWidth = vs?.edgeWidth ?? 1;
-	const edgeWidthMin = vs?.edgeWidthMin ?? 0.5;
-	const edgeWidthMax = vs?.edgeWidthMax ?? 4;
-	const bondToThickness = vs?.bondToThickness ?? false;
-	const selectedEdgeWidth = vs?.selectedEdgeWidth ?? 3;
-	const labelColor = vs?.labelColor ?? FALLBACK_LABEL_COLOR;
-	const labelSize = vs?.labelSize ?? 11;
-	const labelOffset = vs?.labelOffset ?? 4;
-	const showLabels = vs?.showLabels ?? true;
-	const canvasBgColor = vs?.canvasBgColor ?? null;
+	// Derive all visual params — default to DEV_SETTINGS_DEFAULTS
+	const d = vs ?? DEV_SETTINGS_DEFAULTS;
+	const {
+		defaultNodeColor,
+		nodeBorderWidth,
+		nodeBorderColor,
+		hoverExpand,
+		selectedGlowOffset,
+		selectedGlowOpacity,
+		cohortRingOffset,
+		cohortRingWidth,
+		edgeWidthMin,
+		edgeWidthMax,
+		bondToThickness,
+		selectedEdgeWidth,
+		labelColor,
+		labelSize,
+		labelOffset,
+		showLabels,
+		canvasBgColor,
+	} = d;
 
-	const edgeColors: Record<RelationshipCategory, string> = vs
-		? {
-				default: vs.edgeColorDefault,
-				romantic: vs.edgeColorRomantic,
-				family: vs.edgeColorFamily,
-				professional: vs.edgeColorProfessional,
-			}
-		: FALLBACK_EDGE_COLORS;
+	const edgeColors: Record<RelationshipCategory, string> = {
+		default: d.edgeColorDefault,
+		romantic: d.edgeColorRomantic,
+		family: d.edgeColorFamily,
+		professional: d.edgeColorProfessional,
+	};
 
 	// Build lookup maps once per frame
 	const personMap = new Map<string, Person>();
@@ -123,20 +106,7 @@ export function render(
 	const viewPadding = 50;
 
 	// 3. Build adjacency + degree data for hover-highlight and node sizing
-	const degreeMap = new Map<string, number>();
-	const egoIds = new Set<string>();
-	for (const p of persons) {
-		if (p.isEgo) egoIds.add(p.id);
-	}
-	for (const rel of relationships) {
-		degreeMap.set(rel.sourceId, (degreeMap.get(rel.sourceId) ?? 0) + 1);
-		degreeMap.set(rel.targetId, (degreeMap.get(rel.targetId) ?? 0) + 1);
-	}
-	// maxDegree among non-ego nodes only — ego's degree dominates and flattens sizing
-	let maxDegree = 1;
-	for (const [id, deg] of degreeMap) {
-		if (!egoIds.has(id) && deg > maxDegree) maxDegree = deg;
-	}
+	const { degreeMap, maxDegree } = computeDegreeStats(persons, relationships);
 
 	// When a node is hovered, compute which nodes/edges are adjacent
 	const highlightNodeIds = new Set<string>();
@@ -255,7 +225,7 @@ export function render(
 		const isNodeHighlighted = highlightNodeIds.has(person.id);
 
 		// Compute fade-in opacity for recently added nodes
-		const addedAt = (person as any)._addedAt;
+		const addedAt = person._addedAt;
 		let nodeAlpha = 1;
 		if (addedAt) {
 			const elapsed = Date.now() - addedAt;
@@ -272,7 +242,7 @@ export function render(
 		// Degree-proportional radius
 		const degree = degreeMap.get(person.id) ?? 0;
 		const baseRadius = person.isEgo
-			? (vs?.egoRadius ?? EGO_RADIUS)
+			? d.egoRadius
 			: getVisualRadius(degree, maxDegree, false);
 		const cohortId = person.cohortIds[0];
 		const color = cohortId

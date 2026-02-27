@@ -10,6 +10,8 @@ export interface Person {
 	cohortIds: string[];
 	isEgo: boolean;
 	notes?: string;
+	/** Transient — set on creation for fade-in animation, not persisted. */
+	_addedAt?: number;
 	// d3-force mutates these in-place
 	x?: number;
 	y?: number;

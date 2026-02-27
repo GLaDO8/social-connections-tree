@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useGraph } from "@/context/GraphContext";
-import { DEFAULT_COHORT_COLORS } from "@/lib/graph-utils";
+import { DEFAULT_COHORT_COLORS } from "@/lib/graph-constants";
 
 interface CohortManagerProps {
 	open: boolean;

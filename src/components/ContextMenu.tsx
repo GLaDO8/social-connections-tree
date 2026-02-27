@@ -92,7 +92,7 @@ export default function ContextMenu({
 	if (!nodeId && !edgeId) return null;
 
 	// Viewport boundary clamping
-	const menuHeight = nodeId ? 80 : 80; // approximate: 2 items * ~36px + padding
+	const menuHeight = 80; // approximate: 2 items * ~36px + padding
 	const clampedX = Math.min(x, window.innerWidth - MENU_WIDTH - MENU_PADDING);
 	const clampedY = Math.min(y, window.innerHeight - menuHeight - MENU_PADDING);
 

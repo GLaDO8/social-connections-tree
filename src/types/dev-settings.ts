@@ -1,5 +1,3 @@
-import type { RelationshipCategory } from "../lib/relationship-config";
-
 export interface DevSettings {
 	// Physics
 	repulsion: number;
@@ -89,14 +87,3 @@ export const DEV_SETTINGS_DEFAULTS: DevSettings = {
 	// Canvas
 	canvasBgColor: "#09090B",
 };
-
-export function edgeColorsFromSettings(
-	s: DevSettings,
-): Record<RelationshipCategory, string> {
-	return {
-		default: s.edgeColorDefault,
-		romantic: s.edgeColorRomantic,
-		family: s.edgeColorFamily,
-		professional: s.edgeColorProfessional,
-	};
-}

@@ -1,6 +1,6 @@
+import { DEFAULT_COHORT_COLORS } from "@/lib/graph-constants";
 import type { GraphAction } from "@/lib/graph-reducer";
 import { graphReducer } from "@/lib/graph-reducer";
-import { DEFAULT_COHORT_COLORS } from "@/lib/graph-utils";
 import type {
 	Cohort,
 	Person,
