@@ -79,12 +79,12 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 			},
 			bondMapping: {
 				bondToThickness: d.bondToThickness,
+				edgeWidthMin: [d.edgeWidthMin, 0.5, 5, 0.5] as [number, number, number, number],
+				edgeWidthMax: [d.edgeWidthMax, 1, 8, 0.5] as [number, number, number, number],
 			},
 			edges: {
 				_collapsed: true,
 				edgeWidth: [d.edgeWidth, 0.5, 5, 0.5] as [number, number, number, number],
-				edgeWidthMin: [d.edgeWidthMin, 0.5, 5, 0.5] as [number, number, number, number],
-				edgeWidthMax: [d.edgeWidthMax, 1, 8, 0.5] as [number, number, number, number],
 				selectedEdgeWidth: [d.selectedEdgeWidth, 1, 8, 0.5] as [number, number, number, number],
 				edgeColorDefault: d.edgeColorDefault,
 				edgeColorRomantic: d.edgeColorRomantic,
@@ -119,6 +119,8 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 		const next: VisualSettings = {
 			// Bond mapping
 			bondToThickness: p.bondMapping.bondToThickness,
+			edgeWidthMin: p.bondMapping.edgeWidthMin,
+			edgeWidthMax: p.bondMapping.edgeWidthMax,
 			// Nodes
 			nodeRadius: p.nodes.nodeRadius,
 			egoRadius: p.nodes.egoRadius,
@@ -132,8 +134,6 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 			cohortRingWidth: p.nodes.cohortRingWidth,
 			// Edges
 			edgeWidth: p.edges.edgeWidth,
-			edgeWidthMin: p.edges.edgeWidthMin,
-			edgeWidthMax: p.edges.edgeWidthMax,
 			selectedEdgeWidth: p.edges.selectedEdgeWidth,
 			edgeColorDefault: p.edges.edgeColorDefault,
 			edgeColorRomantic: p.edges.edgeColorRomantic,
@@ -152,6 +152,8 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 		saveSettings(next);
 	}, [
 		p.bondMapping.bondToThickness,
+		p.bondMapping.edgeWidthMin,
+		p.bondMapping.edgeWidthMax,
 		p.nodes.nodeRadius,
 		p.nodes.egoRadius,
 		p.nodes.defaultNodeColor,
@@ -163,8 +165,6 @@ function DevPanelInner({ onSettingsRef, onReset }: DevPanelInnerProps) {
 		p.nodes.cohortRingOffset,
 		p.nodes.cohortRingWidth,
 		p.edges.edgeWidth,
-		p.edges.edgeWidthMin,
-		p.edges.edgeWidthMax,
 		p.edges.selectedEdgeWidth,
 		p.edges.edgeColorDefault,
 		p.edges.edgeColorRomantic,

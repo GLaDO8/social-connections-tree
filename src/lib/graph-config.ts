@@ -112,13 +112,8 @@ export const PHYSICS = {
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// C. Node Sizing
+// C. Node Sizing — defaults now live in VISUAL_DEFAULTS / getVisualRadius()
 // ═══════════════════════════════════════════════════════════════════════════
-
-export const NODE_RADIUS = 12;
-export const EGO_RADIUS = 20;
-export const MIN_NODE_RADIUS = 7;
-export const MAX_NODE_RADIUS = 18;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // D. Rendering Constants
@@ -228,8 +223,8 @@ export interface VisualSettings {
 
 export const VISUAL_DEFAULTS: VisualSettings = {
 	// Nodes
-	nodeRadius: NODE_RADIUS,
-	egoRadius: EGO_RADIUS,
+	nodeRadius: 12,
+	egoRadius: 20,
 	defaultNodeColor: "#6B7280",
 	nodeBorderWidth: 0,
 	nodeBorderColor: "#FFFFFF",

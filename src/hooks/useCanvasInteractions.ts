@@ -83,6 +83,7 @@ export function useCanvasInteractions(
 					relationshipsRef.current,
 					pos.x,
 					pos.y,
+					ds?.nodeRadius,
 					ds?.egoRadius,
 				);
 				return hit ?? undefined;
@@ -150,6 +151,7 @@ export function useCanvasInteractions(
 				relationshipsRef.current,
 				pos.x,
 				pos.y,
+				ds?.nodeRadius,
 				ds?.egoRadius,
 			);
 
@@ -180,6 +182,7 @@ export function useCanvasInteractions(
 				relationshipsRef.current,
 				pos.x,
 				pos.y,
+				ds?.nodeRadius,
 				ds?.egoRadius,
 			);
 			const nodeId = hitNode?.id ?? null;

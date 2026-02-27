@@ -55,6 +55,7 @@ export function render(
 	// Derive all visual params — default to VISUAL_DEFAULTS
 	const d = vs ?? VISUAL_DEFAULTS;
 	const {
+		nodeRadius,
 		defaultNodeColor,
 		nodeBorderWidth,
 		nodeBorderColor,
@@ -63,6 +64,7 @@ export function render(
 		selectedGlowOpacity,
 		cohortRingOffset,
 		cohortRingWidth,
+		edgeWidth,
 		edgeWidthMin,
 		edgeWidthMax,
 		bondToThickness,
@@ -166,7 +168,7 @@ export function render(
 			// Highlighted edges: thicker + full color
 			lw = bondToThickness
 				? edgeWidthMin + ((bs - 1) / 4) * (edgeWidthMax - edgeWidthMin)
-				: 1.5 + ((bs - 1) / 4) * 2.5; // 1.5 → 4.0
+				: edgeWidth * 1.5;
 			alpha = 1;
 		} else if (isHighlighting) {
 			// Dimmed edges: near-invisible
@@ -176,7 +178,7 @@ export function render(
 			// Default: vary by bond strength
 			lw = bondToThickness
 				? edgeWidthMin + ((bs - 1) / 4) * (edgeWidthMax - edgeWidthMin)
-				: 0.5 + ((bs - 1) / 4) * 1.5;
+				: edgeWidth;
 			alpha = BOND_OPACITY[bs] ?? 0.5;
 		}
 
@@ -227,7 +229,7 @@ export function render(
 
 		// Degree-proportional radius
 		const degree = degreeMap.get(person.id) ?? 0;
-		const baseRadius = person.isEgo ? d.egoRadius : getVisualRadius(degree, maxDegree, false);
+		const baseRadius = getVisualRadius(degree, maxDegree, person.isEgo, nodeRadius, d.egoRadius);
 		const cohortId = person.cohortIds[0];
 		const color = cohortId ? (cohortColorMap.get(cohortId) ?? defaultNodeColor) : defaultNodeColor;
 		const isSelected = person.id === selectedNodeId;

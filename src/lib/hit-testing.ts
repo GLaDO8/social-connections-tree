@@ -1,5 +1,5 @@
 import { type Quadtree, quadtree } from "d3-quadtree";
-import { EDGE_HIT_THRESHOLD, EGO_RADIUS } from "@/lib/graph-config";
+import { EDGE_HIT_THRESHOLD } from "@/lib/graph-config";
 import type { Person, Relationship } from "@/types/graph";
 import { computeDegreeStats, getVisualRadius } from "./graph-constants";
 
@@ -102,16 +102,16 @@ export function hitTestNode(
 	relationships: Relationship[],
 	x: number,
 	y: number,
-	customEgoRadius?: number,
+	nodeRadius?: number,
+	egoRadius?: number,
 ): Person | null {
 	const cache = ensureCache(persons, relationships);
 	if (!cache) return null;
 
 	const { tree, degreeMap, maxDegree } = cache;
-	const er = customEgoRadius ?? EGO_RADIUS;
 
 	// Search with the maximum possible radius (ego or largest hub node)
-	const searchRadius = Math.max(er, 30);
+	const searchRadius = Math.max(egoRadius ?? 20, 30);
 
 	const nearest = tree.find(x, y, searchRadius);
 	if (!nearest) return null;
@@ -120,7 +120,7 @@ export function hitTestNode(
 	const dy = y - nearest.y;
 	const dist = Math.sqrt(dx * dx + dy * dy);
 	const degree = degreeMap.get(nearest.id) ?? 0;
-	const radius = getVisualRadius(degree, maxDegree, nearest.isEgo);
+	const radius = getVisualRadius(degree, maxDegree, nearest.isEgo, nodeRadius, egoRadius);
 
 	return dist <= radius ? nearest : null;
 }
