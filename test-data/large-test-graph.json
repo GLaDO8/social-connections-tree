@@ -1,0 +1,1252 @@
+{
+  "persons": [
+    {
+      "id": "ego",
+      "name": "Me",
+      "cohortIds": [],
+      "isEgo": true
+    },
+    {
+      "id": "p-vikram",
+      "name": "Vikram",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-ananya",
+      "name": "Ananya",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-siddharth",
+      "name": "Siddharth",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-meera",
+      "name": "Meera",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-arjun",
+      "name": "Arjun",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-pooja",
+      "name": "Pooja",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-karan",
+      "name": "Karan",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-divya",
+      "name": "Divya",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-neha",
+      "name": "Neha",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-ritika",
+      "name": "Ritika",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-dhruv",
+      "name": "Dhruv",
+      "cohortIds": [
+        "c-school"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-rahul",
+      "name": "Rahul",
+      "cohortIds": [
+        "c-school",
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-priya",
+      "name": "Priya",
+      "cohortIds": [
+        "c-school",
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-amit",
+      "name": "Amit",
+      "cohortIds": [
+        "c-school",
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-rohan",
+      "name": "Rohan",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-aishwarya",
+      "name": "Aishwarya",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-sneha",
+      "name": "Sneha",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-ritu",
+      "name": "Ritu",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-gaurav",
+      "name": "Gaurav",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-pallavi",
+      "name": "Pallavi",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-manish",
+      "name": "Manish",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-swati",
+      "name": "Swati",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-kunal",
+      "name": "Kunal",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-harsh-c",
+      "name": "Harsh K",
+      "cohortIds": [
+        "c-college"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-deepak",
+      "name": "Deepak",
+      "cohortIds": [
+        "c-college",
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-nikhil",
+      "name": "Nikhil",
+      "cohortIds": [
+        "c-college",
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-nandini",
+      "name": "Nandini",
+      "cohortIds": [
+        "c-college",
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-suresh",
+      "name": "Suresh",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-kavita",
+      "name": "Kavita",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-rajesh",
+      "name": "Rajesh",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-megha",
+      "name": "Megha",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-akash",
+      "name": "Akash",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-varun",
+      "name": "Varun",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-shweta",
+      "name": "Shweta",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-pranav",
+      "name": "Pranav",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-tanya",
+      "name": "Tanya",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-harsh-w",
+      "name": "Harsh M",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-simran",
+      "name": "Simran",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-anil",
+      "name": "Anil",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-prashant",
+      "name": "Prashant",
+      "cohortIds": [
+        "c-work"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-sharma",
+      "name": "Uncle Sharma",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-gupta",
+      "name": "Aunty Gupta",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-ravi",
+      "name": "Ravi",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-anjali",
+      "name": "Anjali",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-saurabh",
+      "name": "Saurabh",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-nisha",
+      "name": "Nisha",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-mohit",
+      "name": "Mohit",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-preeti",
+      "name": "Preeti",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-tarun",
+      "name": "Tarun",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-isha",
+      "name": "Isha",
+      "cohortIds": [
+        "c-neighborhood"
+      ],
+      "isEgo": false
+    },
+    {
+      "id": "p-abhishek",
+      "name": "Abhishek",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-shruti",
+      "name": "Shruti",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-vivek",
+      "name": "Vivek",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-natasha",
+      "name": "Natasha",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-aditi",
+      "name": "Aditi",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-yash",
+      "name": "Yash",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-tanvi",
+      "name": "Tanvi",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-sameer",
+      "name": "Sameer",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-rohini",
+      "name": "Rohini",
+      "cohortIds": [],
+      "isEgo": false
+    },
+    {
+      "id": "p-farhan",
+      "name": "Farhan",
+      "cohortIds": [],
+      "isEgo": false
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-1",
+      "sourceId": "ego",
+      "targetId": "p-vikram",
+      "type": "classmate",
+      "label": "school buddy"
+    },
+    {
+      "id": "r-2",
+      "sourceId": "ego",
+      "targetId": "p-ananya",
+      "type": "classmate"
+    },
+    {
+      "id": "r-3",
+      "sourceId": "ego",
+      "targetId": "p-siddharth",
+      "type": "childhood_friend",
+      "label": "known since kindergarten"
+    },
+    {
+      "id": "r-4",
+      "sourceId": "ego",
+      "targetId": "p-meera",
+      "type": "classmate"
+    },
+    {
+      "id": "r-5",
+      "sourceId": "ego",
+      "targetId": "p-arjun",
+      "type": "close_friend",
+      "label": "cricket partner"
+    },
+    {
+      "id": "r-6",
+      "sourceId": "ego",
+      "targetId": "p-pooja",
+      "type": "classmate"
+    },
+    {
+      "id": "r-7",
+      "sourceId": "ego",
+      "targetId": "p-karan",
+      "type": "friend"
+    },
+    {
+      "id": "r-8",
+      "sourceId": "ego",
+      "targetId": "p-divya",
+      "type": "classmate"
+    },
+    {
+      "id": "r-9",
+      "sourceId": "ego",
+      "targetId": "p-neha",
+      "type": "friend"
+    },
+    {
+      "id": "r-10",
+      "sourceId": "ego",
+      "targetId": "p-ritika",
+      "type": "classmate"
+    },
+    {
+      "id": "r-11",
+      "sourceId": "ego",
+      "targetId": "p-dhruv",
+      "type": "friend",
+      "label": "debate team"
+    },
+    {
+      "id": "r-12",
+      "sourceId": "ego",
+      "targetId": "p-rahul",
+      "type": "close_friend",
+      "label": "best school + college buddy"
+    },
+    {
+      "id": "r-13",
+      "sourceId": "ego",
+      "targetId": "p-priya",
+      "type": "friend"
+    },
+    {
+      "id": "r-14",
+      "sourceId": "ego",
+      "targetId": "p-amit",
+      "type": "classmate"
+    },
+    {
+      "id": "r-15",
+      "sourceId": "ego",
+      "targetId": "p-rohan",
+      "type": "classmate"
+    },
+    {
+      "id": "r-16",
+      "sourceId": "ego",
+      "targetId": "p-aishwarya",
+      "type": "friend"
+    },
+    {
+      "id": "r-17",
+      "sourceId": "ego",
+      "targetId": "p-sneha",
+      "type": "classmate"
+    },
+    {
+      "id": "r-18",
+      "sourceId": "ego",
+      "targetId": "p-ritu",
+      "type": "classmate"
+    },
+    {
+      "id": "r-19",
+      "sourceId": "ego",
+      "targetId": "p-gaurav",
+      "type": "friend"
+    },
+    {
+      "id": "r-20",
+      "sourceId": "ego",
+      "targetId": "p-pallavi",
+      "type": "classmate"
+    },
+    {
+      "id": "r-21",
+      "sourceId": "ego",
+      "targetId": "p-manish",
+      "type": "roommate",
+      "label": "hostel roommate"
+    },
+    {
+      "id": "r-22",
+      "sourceId": "ego",
+      "targetId": "p-swati",
+      "type": "classmate"
+    },
+    {
+      "id": "r-23",
+      "sourceId": "ego",
+      "targetId": "p-kunal",
+      "type": "roommate",
+      "label": "hostel neighbor"
+    },
+    {
+      "id": "r-24",
+      "sourceId": "ego",
+      "targetId": "p-harsh-c",
+      "type": "acquaintance"
+    },
+    {
+      "id": "r-25",
+      "sourceId": "ego",
+      "targetId": "p-deepak",
+      "type": "colleague",
+      "label": "college friend turned colleague"
+    },
+    {
+      "id": "r-26",
+      "sourceId": "ego",
+      "targetId": "p-nikhil",
+      "type": "colleague"
+    },
+    {
+      "id": "r-27",
+      "sourceId": "ego",
+      "targetId": "p-nandini",
+      "type": "colleague"
+    },
+    {
+      "id": "r-28",
+      "sourceId": "ego",
+      "targetId": "p-suresh",
+      "type": "colleague"
+    },
+    {
+      "id": "r-29",
+      "sourceId": "ego",
+      "targetId": "p-kavita",
+      "type": "colleague",
+      "label": "team lead"
+    },
+    {
+      "id": "r-30",
+      "sourceId": "ego",
+      "targetId": "p-rajesh",
+      "type": "colleague"
+    },
+    {
+      "id": "r-31",
+      "sourceId": "ego",
+      "targetId": "p-megha",
+      "type": "colleague"
+    },
+    {
+      "id": "r-32",
+      "sourceId": "ego",
+      "targetId": "p-akash",
+      "type": "colleague",
+      "label": "desk neighbor"
+    },
+    {
+      "id": "r-33",
+      "sourceId": "ego",
+      "targetId": "p-varun",
+      "type": "colleague"
+    },
+    {
+      "id": "r-34",
+      "sourceId": "ego",
+      "targetId": "p-shweta",
+      "type": "colleague"
+    },
+    {
+      "id": "r-35",
+      "sourceId": "ego",
+      "targetId": "p-pranav",
+      "type": "colleague"
+    },
+    {
+      "id": "r-36",
+      "sourceId": "ego",
+      "targetId": "p-tanya",
+      "type": "colleague"
+    },
+    {
+      "id": "r-37",
+      "sourceId": "ego",
+      "targetId": "p-harsh-w",
+      "type": "colleague"
+    },
+    {
+      "id": "r-38",
+      "sourceId": "ego",
+      "targetId": "p-simran",
+      "type": "colleague"
+    },
+    {
+      "id": "r-39",
+      "sourceId": "ego",
+      "targetId": "p-anil",
+      "type": "acquaintance",
+      "label": "different team"
+    },
+    {
+      "id": "r-40",
+      "sourceId": "ego",
+      "targetId": "p-prashant",
+      "type": "colleague"
+    },
+    {
+      "id": "r-41",
+      "sourceId": "ego",
+      "targetId": "p-sharma",
+      "type": "family",
+      "label": "dad's friend"
+    },
+    {
+      "id": "r-42",
+      "sourceId": "ego",
+      "targetId": "p-gupta",
+      "type": "family",
+      "label": "mom's friend"
+    },
+    {
+      "id": "r-43",
+      "sourceId": "ego",
+      "targetId": "p-ravi",
+      "type": "friend",
+      "label": "neighborhood cricket"
+    },
+    {
+      "id": "r-44",
+      "sourceId": "ego",
+      "targetId": "p-anjali",
+      "type": "friend"
+    },
+    {
+      "id": "r-45",
+      "sourceId": "ego",
+      "targetId": "p-saurabh",
+      "type": "childhood_friend",
+      "label": "grew up together"
+    },
+    {
+      "id": "r-46",
+      "sourceId": "ego",
+      "targetId": "p-nisha",
+      "type": "friend"
+    },
+    {
+      "id": "r-47",
+      "sourceId": "ego",
+      "targetId": "p-mohit",
+      "type": "acquaintance"
+    },
+    {
+      "id": "r-48",
+      "sourceId": "ego",
+      "targetId": "p-preeti",
+      "type": "acquaintance"
+    },
+    {
+      "id": "r-49",
+      "sourceId": "ego",
+      "targetId": "p-tarun",
+      "type": "childhood_friend"
+    },
+    {
+      "id": "r-50",
+      "sourceId": "ego",
+      "targetId": "p-isha",
+      "type": "friend"
+    },
+    {
+      "id": "r-51",
+      "sourceId": "ego",
+      "targetId": "p-abhishek",
+      "type": "best_friend",
+      "label": "childhood best friend"
+    },
+    {
+      "id": "r-52",
+      "sourceId": "ego",
+      "targetId": "p-shruti",
+      "type": "partner"
+    },
+    {
+      "id": "r-53",
+      "sourceId": "ego",
+      "targetId": "p-vivek",
+      "type": "acquaintance",
+      "label": "met at conference"
+    },
+    {
+      "id": "r-54",
+      "sourceId": "ego",
+      "targetId": "p-natasha",
+      "type": "ex"
+    },
+    {
+      "id": "r-55",
+      "sourceId": "ego",
+      "targetId": "p-aditi",
+      "type": "crush"
+    },
+    {
+      "id": "r-56",
+      "sourceId": "ego",
+      "targetId": "p-yash",
+      "type": "other",
+      "label": "gym buddy"
+    },
+    {
+      "id": "r-57",
+      "sourceId": "ego",
+      "targetId": "p-tanvi",
+      "type": "friend",
+      "label": "travel friend"
+    },
+    {
+      "id": "r-58",
+      "sourceId": "ego",
+      "targetId": "p-sameer",
+      "type": "childhood_friend",
+      "label": "summer camp"
+    },
+    {
+      "id": "r-59",
+      "sourceId": "ego",
+      "targetId": "p-rohini",
+      "type": "acquaintance"
+    },
+    {
+      "id": "r-60",
+      "sourceId": "ego",
+      "targetId": "p-farhan",
+      "type": "friend",
+      "label": "online gaming"
+    },
+    {
+      "id": "r-61",
+      "sourceId": "p-rahul",
+      "targetId": "p-priya",
+      "type": "classmate",
+      "label": "school classmates"
+    },
+    {
+      "id": "r-62",
+      "sourceId": "p-vikram",
+      "targetId": "p-arjun",
+      "type": "friend"
+    },
+    {
+      "id": "r-63",
+      "sourceId": "p-ananya",
+      "targetId": "p-meera",
+      "type": "close_friend",
+      "label": "best friends"
+    },
+    {
+      "id": "r-64",
+      "sourceId": "p-siddharth",
+      "targetId": "p-karan",
+      "type": "friend"
+    },
+    {
+      "id": "r-65",
+      "sourceId": "p-pooja",
+      "targetId": "p-divya",
+      "type": "classmate"
+    },
+    {
+      "id": "r-66",
+      "sourceId": "p-neha",
+      "targetId": "p-ananya",
+      "type": "friend"
+    },
+    {
+      "id": "r-67",
+      "sourceId": "p-arjun",
+      "targetId": "p-rahul",
+      "type": "friend"
+    },
+    {
+      "id": "r-68",
+      "sourceId": "p-dhruv",
+      "targetId": "p-vikram",
+      "type": "classmate"
+    },
+    {
+      "id": "r-69",
+      "sourceId": "p-ritika",
+      "targetId": "p-neha",
+      "type": "friend"
+    },
+    {
+      "id": "r-70",
+      "sourceId": "p-karan",
+      "targetId": "p-divya",
+      "type": "classmate"
+    },
+    {
+      "id": "r-71",
+      "sourceId": "p-siddharth",
+      "targetId": "p-arjun",
+      "type": "childhood_friend"
+    },
+    {
+      "id": "r-72",
+      "sourceId": "p-meera",
+      "targetId": "p-pooja",
+      "type": "classmate"
+    },
+    {
+      "id": "r-73",
+      "sourceId": "p-rohan",
+      "targetId": "p-aishwarya",
+      "type": "classmate"
+    },
+    {
+      "id": "r-74",
+      "sourceId": "p-sneha",
+      "targetId": "p-ritu",
+      "type": "close_friend"
+    },
+    {
+      "id": "r-75",
+      "sourceId": "p-gaurav",
+      "targetId": "p-pallavi",
+      "type": "classmate"
+    },
+    {
+      "id": "r-76",
+      "sourceId": "p-manish",
+      "targetId": "p-kunal",
+      "type": "roommate",
+      "label": "hostel mates"
+    },
+    {
+      "id": "r-77",
+      "sourceId": "p-swati",
+      "targetId": "p-sneha",
+      "type": "classmate"
+    },
+    {
+      "id": "r-78",
+      "sourceId": "p-rahul",
+      "targetId": "p-rohan",
+      "type": "classmate",
+      "label": "college classmates too"
+    },
+    {
+      "id": "r-79",
+      "sourceId": "p-priya",
+      "targetId": "p-aishwarya",
+      "type": "friend"
+    },
+    {
+      "id": "r-80",
+      "sourceId": "p-amit",
+      "targetId": "p-gaurav",
+      "type": "classmate"
+    },
+    {
+      "id": "r-81",
+      "sourceId": "p-deepak",
+      "targetId": "p-rohan",
+      "type": "friend"
+    },
+    {
+      "id": "r-82",
+      "sourceId": "p-nikhil",
+      "targetId": "p-sneha",
+      "type": "classmate"
+    },
+    {
+      "id": "r-83",
+      "sourceId": "p-nandini",
+      "targetId": "p-ritu",
+      "type": "friend"
+    },
+    {
+      "id": "r-84",
+      "sourceId": "p-harsh-c",
+      "targetId": "p-swati",
+      "type": "classmate"
+    },
+    {
+      "id": "r-85",
+      "sourceId": "p-kunal",
+      "targetId": "p-gaurav",
+      "type": "friend"
+    },
+    {
+      "id": "r-86",
+      "sourceId": "p-manish",
+      "targetId": "p-pallavi",
+      "type": "classmate"
+    },
+    {
+      "id": "r-87",
+      "sourceId": "p-suresh",
+      "targetId": "p-kavita",
+      "type": "colleague",
+      "label": "same team"
+    },
+    {
+      "id": "r-88",
+      "sourceId": "p-rajesh",
+      "targetId": "p-megha",
+      "type": "colleague"
+    },
+    {
+      "id": "r-89",
+      "sourceId": "p-akash",
+      "targetId": "p-varun",
+      "type": "colleague",
+      "label": "pair programming"
+    },
+    {
+      "id": "r-90",
+      "sourceId": "p-shweta",
+      "targetId": "p-pranav",
+      "type": "colleague"
+    },
+    {
+      "id": "r-91",
+      "sourceId": "p-tanya",
+      "targetId": "p-harsh-w",
+      "type": "colleague"
+    },
+    {
+      "id": "r-92",
+      "sourceId": "p-simran",
+      "targetId": "p-deepak",
+      "type": "colleague"
+    },
+    {
+      "id": "r-93",
+      "sourceId": "p-deepak",
+      "targetId": "p-nikhil",
+      "type": "colleague",
+      "label": "engineering team"
+    },
+    {
+      "id": "r-94",
+      "sourceId": "p-nandini",
+      "targetId": "p-suresh",
+      "type": "colleague"
+    },
+    {
+      "id": "r-95",
+      "sourceId": "p-anil",
+      "targetId": "p-prashant",
+      "type": "colleague"
+    },
+    {
+      "id": "r-96",
+      "sourceId": "p-kavita",
+      "targetId": "p-shweta",
+      "type": "colleague",
+      "label": "women in tech group"
+    },
+    {
+      "id": "r-97",
+      "sourceId": "p-varun",
+      "targetId": "p-pranav",
+      "type": "colleague"
+    },
+    {
+      "id": "r-98",
+      "sourceId": "p-rajesh",
+      "targetId": "p-akash",
+      "type": "colleague"
+    },
+    {
+      "id": "r-99",
+      "sourceId": "p-megha",
+      "targetId": "p-tanya",
+      "type": "colleague"
+    },
+    {
+      "id": "r-100",
+      "sourceId": "p-harsh-w",
+      "targetId": "p-simran",
+      "type": "colleague"
+    },
+    {
+      "id": "r-101",
+      "sourceId": "p-sharma",
+      "targetId": "p-gupta",
+      "type": "friend",
+      "label": "old neighbors"
+    },
+    {
+      "id": "r-102",
+      "sourceId": "p-ravi",
+      "targetId": "p-saurabh",
+      "type": "friend"
+    },
+    {
+      "id": "r-103",
+      "sourceId": "p-anjali",
+      "targetId": "p-nisha",
+      "type": "friend"
+    },
+    {
+      "id": "r-104",
+      "sourceId": "p-mohit",
+      "targetId": "p-tarun",
+      "type": "friend"
+    },
+    {
+      "id": "r-105",
+      "sourceId": "p-preeti",
+      "targetId": "p-isha",
+      "type": "friend"
+    },
+    {
+      "id": "r-106",
+      "sourceId": "p-saurabh",
+      "targetId": "p-tarun",
+      "type": "childhood_friend"
+    },
+    {
+      "id": "r-107",
+      "sourceId": "p-ravi",
+      "targetId": "p-mohit",
+      "type": "acquaintance"
+    },
+    {
+      "id": "r-108",
+      "sourceId": "p-sharma",
+      "targetId": "p-ravi",
+      "type": "family",
+      "label": "Ravi's dad's friend"
+    },
+    {
+      "id": "r-109",
+      "sourceId": "p-abhishek",
+      "targetId": "p-siddharth",
+      "type": "friend",
+      "label": "met through me"
+    },
+    {
+      "id": "r-110",
+      "sourceId": "p-shruti",
+      "targetId": "p-priya",
+      "type": "friend",
+      "label": "get along well"
+    },
+    {
+      "id": "r-111",
+      "sourceId": "p-sameer",
+      "targetId": "p-arjun",
+      "type": "friend"
+    },
+    {
+      "id": "r-112",
+      "sourceId": "p-tanvi",
+      "targetId": "p-aishwarya",
+      "type": "friend",
+      "label": "travel trip together"
+    },
+    {
+      "id": "r-113",
+      "sourceId": "p-farhan",
+      "targetId": "p-akash",
+      "type": "friend",
+      "label": "gaming buddies"
+    },
+    {
+      "id": "r-114",
+      "sourceId": "p-natasha",
+      "targetId": "p-sneha",
+      "type": "friend"
+    },
+    {
+      "id": "r-115",
+      "sourceId": "p-abhishek",
+      "targetId": "p-ravi",
+      "type": "friend",
+      "label": "neighborhood connection"
+    },
+    {
+      "id": "r-116",
+      "sourceId": "p-shruti",
+      "targetId": "p-kavita",
+      "type": "acquaintance",
+      "label": "met at office party"
+    },
+    {
+      "id": "r-117",
+      "sourceId": "p-rahul",
+      "targetId": "p-deepak",
+      "type": "friend",
+      "label": "school to work connection"
+    },
+    {
+      "id": "r-118",
+      "sourceId": "p-saurabh",
+      "targetId": "p-sameer",
+      "type": "friend"
+    }
+  ],
+  "cohorts": [
+    {
+      "id": "c-school",
+      "name": "School",
+      "color": "#F97316"
+    },
+    {
+      "id": "c-college",
+      "name": "College",
+      "color": "#3B82F6"
+    },
+    {
+      "id": "c-work",
+      "name": "Work",
+      "color": "#22C55E"
+    },
+    {
+      "id": "c-neighborhood",
+      "name": "Neighborhood",
+      "color": "#A855F7"
+    }
+  ],
+  "activeCohortId": null,
+  "metadata": {
+    "title": "My Social Graph",
+    "createdAt": "2026-02-28T06:12:45.412Z",
+    "updatedAt": "2026-02-28T06:12:45.415Z"
+  }
+}
