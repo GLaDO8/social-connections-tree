@@ -99,6 +99,34 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 				labelOffset: [d.labelOffset, 0, 12, 1] as [number, number, number, number],
 				showLabels: d.showLabels,
 			},
+			cohortGroups: {
+				_collapsed: true,
+				showCohortGroups: d.showCohortGroups,
+				cohortGroupFillOpacity: [d.cohortGroupFillOpacity, 0, 1, 0.05] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				cohortGroupBorderOpacity: [d.cohortGroupBorderOpacity, 0, 1, 0.05] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				cohortGroupBorderWidth: [d.cohortGroupBorderWidth, 0, 4, 0.5] as [
+					number,
+					number,
+					number,
+					number,
+				],
+				cohortGroupBorderRadius: [d.cohortGroupBorderRadius, 0, 20, 1] as [
+					number,
+					number,
+					number,
+					number,
+				],
+			},
 			canvas: {
 				_collapsed: true,
 				canvasBgColor: d.canvasBgColor,
@@ -145,6 +173,12 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 			labelSize: p.labels.labelSize,
 			labelOffset: p.labels.labelOffset,
 			showLabels: p.labels.showLabels,
+			// Cohort groups
+			showCohortGroups: p.cohortGroups.showCohortGroups,
+			cohortGroupFillOpacity: p.cohortGroups.cohortGroupFillOpacity,
+			cohortGroupBorderOpacity: p.cohortGroups.cohortGroupBorderOpacity,
+			cohortGroupBorderWidth: p.cohortGroups.cohortGroupBorderWidth,
+			cohortGroupBorderRadius: p.cohortGroups.cohortGroupBorderRadius,
 			// Canvas
 			canvasBgColor: p.canvas.canvasBgColor,
 		};
@@ -177,6 +211,11 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 		p.labels.labelSize,
 		p.labels.labelOffset,
 		p.labels.showLabels,
+		p.cohortGroups.showCohortGroups,
+		p.cohortGroups.cohortGroupFillOpacity,
+		p.cohortGroups.cohortGroupBorderOpacity,
+		p.cohortGroups.cohortGroupBorderWidth,
+		p.cohortGroups.cohortGroupBorderRadius,
 		p.canvas.canvasBgColor,
 	]);
 

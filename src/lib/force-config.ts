@@ -261,6 +261,106 @@ export function forceCohortCluster(persons: Person[], cohorts: Cohort[], strengt
 	return force;
 }
 
+/**
+ * Custom d3 force that pushes non-members out of foreign cohort areas.
+ * Companion to forceCohortCluster — cluster pulls members in, exclusion pushes outsiders out.
+ */
+export function forceCohortExclusion(persons: Person[], cohorts: Cohort[], strength: number) {
+	let nodes: Person[] = persons;
+
+	function force(alpha: number) {
+		// Compute live centroid and radius of each cohort
+		const centroidX = new Map<string, number>();
+		const centroidY = new Map<string, number>();
+		const centroidCount = new Map<string, number>();
+		const cohortRadius = new Map<string, number>();
+
+		for (const c of cohorts) {
+			centroidX.set(c.id, 0);
+			centroidY.set(c.id, 0);
+			centroidCount.set(c.id, 0);
+		}
+
+		for (const p of nodes) {
+			if (p.isEgo) continue;
+			for (const cid of p.cohortIds) {
+				if (centroidX.has(cid)) {
+					centroidX.set(cid, centroidX.get(cid)! + (p.x ?? 0));
+					centroidY.set(cid, centroidY.get(cid)! + (p.y ?? 0));
+					centroidCount.set(cid, centroidCount.get(cid)! + 1);
+				}
+			}
+		}
+
+		// Finalize centroids
+		for (const c of cohorts) {
+			const count = centroidCount.get(c.id) ?? 0;
+			if (count > 0) {
+				centroidX.set(c.id, centroidX.get(c.id)! / count);
+				centroidY.set(c.id, centroidY.get(c.id)! / count);
+			}
+		}
+
+		// Compute each cohort's spatial radius (max member distance from centroid + padding)
+		const padding = 40;
+		for (const c of cohorts) {
+			const count = centroidCount.get(c.id) ?? 0;
+			if (count < 2) {
+				cohortRadius.set(c.id, 0);
+				continue;
+			}
+			const cx = centroidX.get(c.id)!;
+			const cy = centroidY.get(c.id)!;
+			let maxDist = 0;
+			for (const p of nodes) {
+				if (p.isEgo) continue;
+				if (!p.cohortIds.includes(c.id)) continue;
+				const dx = (p.x ?? 0) - cx;
+				const dy = (p.y ?? 0) - cy;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				if (dist > maxDist) maxDist = dist;
+			}
+			cohortRadius.set(c.id, maxDist + padding);
+		}
+
+		// Push non-members out of each cohort's radius
+		for (const p of nodes) {
+			if (p.isEgo) continue;
+
+			for (const c of cohorts) {
+				// Skip cohorts this node belongs to
+				if (p.cohortIds.includes(c.id)) continue;
+
+				const radius = cohortRadius.get(c.id) ?? 0;
+				if (radius === 0) continue;
+
+				const cx = centroidX.get(c.id)!;
+				const cy = centroidY.get(c.id)!;
+				const px = p.x ?? 0;
+				const py = p.y ?? 0;
+				const dx = px - cx;
+				const dy = py - cy;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+
+				if (dist < radius && dist > 0) {
+					// Inside foreign cohort — push outward
+					// Strength scales inversely with distance (stronger when deeper inside)
+					const overlap = 1 - dist / radius;
+					const pushStrength = strength * overlap * alpha;
+					p.vx = (p.vx ?? 0) + (dx / dist) * pushStrength * radius;
+					p.vy = (p.vy ?? 0) + (dy / dist) * pushStrength * radius;
+				}
+			}
+		}
+	}
+
+	force.initialize = (_nodes: Person[]) => {
+		nodes = _nodes;
+	};
+
+	return force;
+}
+
 export function createSimulation(
 	persons: Person[],
 	relationships: Relationship[],
@@ -311,6 +411,7 @@ export function createSimulation(
 		)
 		.force("radial", makeRadialForce(bestBondToEgo, cx, cy))
 		.force("cluster", forceCohortCluster(persons, cohorts, PHYSICS.clusterStrength))
+		.force("exclusion", forceCohortExclusion(persons, cohorts, PHYSICS.exclusionStrength))
 		.alphaDecay(PHYSICS.alphaDecay)
 		.alphaMin(PHYSICS.alphaMin)
 		.velocityDecay(PHYSICS.velocityDecay);
@@ -370,6 +471,7 @@ export function syncData(
 
 	simulation.force("radial", makeRadialForce(bestBondToEgo, cx, cy));
 	simulation.force("cluster", forceCohortCluster(persons, cohorts, PHYSICS.clusterStrength));
+	simulation.force("exclusion", forceCohortExclusion(persons, cohorts, PHYSICS.exclusionStrength));
 
 	reheat(simulation);
 }
