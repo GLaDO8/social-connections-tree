@@ -77,6 +77,7 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 				],
 				cohortRingOffset: [d.cohortRingOffset, 1, 10, 1] as [number, number, number, number],
 				cohortRingWidth: [d.cohortRingWidth, 1, 5, 0.5] as [number, number, number, number],
+				degreeAlphaMin: [d.degreeAlphaMin, 0, 1, 0.05] as [number, number, number, number],
 			},
 			bondMapping: {
 				bondToThickness: d.bondToThickness,
@@ -91,6 +92,7 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 				edgeColorRomantic: d.edgeColorRomantic,
 				edgeColorFamily: d.edgeColorFamily,
 				edgeColorProfessional: d.edgeColorProfessional,
+				showEgoEdges: d.showEgoEdges,
 			},
 			labels: {
 				_collapsed: true,
@@ -98,6 +100,8 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 				labelSize: [d.labelSize, 8, 18, 1] as [number, number, number, number],
 				labelOffset: [d.labelOffset, 0, 12, 1] as [number, number, number, number],
 				showLabels: d.showLabels,
+				labelStrokeWidth: [d.labelStrokeWidth, 0, 6, 0.5] as [number, number, number, number],
+				labelStrokeColor: d.labelStrokeColor,
 			},
 			cohortGroups: {
 				_collapsed: true,
@@ -126,6 +130,7 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 					number,
 					number,
 				],
+				cohortGroupPadding: [d.cohortGroupPadding, 0, 60, 2] as [number, number, number, number],
 			},
 			canvas: {
 				_collapsed: true,
@@ -161,6 +166,7 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 			selectedGlowOpacity: p.nodes.selectedGlowOpacity,
 			cohortRingOffset: p.nodes.cohortRingOffset,
 			cohortRingWidth: p.nodes.cohortRingWidth,
+			degreeAlphaMin: p.nodes.degreeAlphaMin,
 			// Edges
 			edgeWidth: p.edges.edgeWidth,
 			selectedEdgeWidth: p.edges.selectedEdgeWidth,
@@ -168,17 +174,21 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 			edgeColorRomantic: p.edges.edgeColorRomantic,
 			edgeColorFamily: p.edges.edgeColorFamily,
 			edgeColorProfessional: p.edges.edgeColorProfessional,
+			showEgoEdges: p.edges.showEgoEdges,
 			// Labels
 			labelColor: p.labels.labelColor,
 			labelSize: p.labels.labelSize,
 			labelOffset: p.labels.labelOffset,
 			showLabels: p.labels.showLabels,
+			labelStrokeWidth: p.labels.labelStrokeWidth,
+			labelStrokeColor: p.labels.labelStrokeColor,
 			// Cohort groups
 			showCohortGroups: p.cohortGroups.showCohortGroups,
 			cohortGroupFillOpacity: p.cohortGroups.cohortGroupFillOpacity,
 			cohortGroupBorderOpacity: p.cohortGroups.cohortGroupBorderOpacity,
 			cohortGroupBorderWidth: p.cohortGroups.cohortGroupBorderWidth,
 			cohortGroupBorderRadius: p.cohortGroups.cohortGroupBorderRadius,
+			cohortGroupPadding: p.cohortGroups.cohortGroupPadding,
 			// Canvas
 			canvasBgColor: p.canvas.canvasBgColor,
 		};
@@ -201,21 +211,26 @@ function DevPanelInner({ onSettingsRef, onSettingsChange, onReset }: DevPanelInn
 		p.nodes.selectedGlowOpacity,
 		p.nodes.cohortRingOffset,
 		p.nodes.cohortRingWidth,
+		p.nodes.degreeAlphaMin,
 		p.edges.edgeWidth,
 		p.edges.selectedEdgeWidth,
 		p.edges.edgeColorDefault,
 		p.edges.edgeColorRomantic,
 		p.edges.edgeColorFamily,
 		p.edges.edgeColorProfessional,
+		p.edges.showEgoEdges,
 		p.labels.labelColor,
 		p.labels.labelSize,
 		p.labels.labelOffset,
 		p.labels.showLabels,
+		p.labels.labelStrokeWidth,
+		p.labels.labelStrokeColor,
 		p.cohortGroups.showCohortGroups,
 		p.cohortGroups.cohortGroupFillOpacity,
 		p.cohortGroups.cohortGroupBorderOpacity,
 		p.cohortGroups.cohortGroupBorderWidth,
 		p.cohortGroups.cohortGroupBorderRadius,
+		p.cohortGroups.cohortGroupPadding,
 		p.canvas.canvasBgColor,
 	]);
 

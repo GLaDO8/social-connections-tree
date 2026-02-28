@@ -76,7 +76,7 @@ function makeRadialForce(bestBondToEgo: Map<string, BondStrength>, cx: number, c
 			if (d.isEgo) return 0;
 			const bond = bestBondToEgo.get(d.id);
 			if (bond) return BOND_RADIAL[bond];
-			return 350; // nodes not directly connected to ego — outer ring
+			return 500; // nodes not directly connected to ego — outer ring
 		},
 		cx,
 		cy,
@@ -150,7 +150,7 @@ export function seedInitialPositions(
 
 		const angle = angleSum / angleCount;
 		const bond = bestBondToEgo.get(p.id);
-		const radius = bond ? BOND_RADIAL[bond] : 350;
+		const radius = bond ? BOND_RADIAL[bond] : 500;
 		// Add jitter to prevent exact overlap
 		const jitter = (Math.random() - 0.5) * radius * 0.3;
 		const angleJitter = (Math.random() - 0.5) * sectorSize * 0.4;
@@ -173,7 +173,7 @@ export function seedInitialPositions(
 		for (let i = 0; i < unpositioned.length; i++) {
 			const p = unpositioned[i];
 			const bond = bestBondToEgo.get(p.id);
-			const radius = bond ? BOND_RADIAL[bond] : 350;
+			const radius = bond ? BOND_RADIAL[bond] : 500;
 			const frac = unpositioned.length > 1 ? i / (unpositioned.length - 1) : 0.5;
 			const angle = startAngle + (frac - 0.5) * spreadAngle;
 			const jitter = (Math.random() - 0.5) * radius * 0.2;
@@ -383,17 +383,23 @@ export function createSimulation(
 			"link",
 			forceLink<Person, LinkDatum>(links)
 				.id((d) => d.id)
-				.strength((d) => BOND_LINK_STRENGTH[d.bondStrength])
+				.strength((d) => {
+					const base = BOND_LINK_STRENGTH[d.bondStrength];
+					// Weaken ego links — radial force handles ego distance
+					const src = d.source as Person;
+					const tgt = d.target as Person;
+					if (src.isEgo || tgt.isEgo) return base * PHYSICS.egoLinkStrengthMultiplier;
+					return base;
+				})
 				.distance((d) => BOND_DISTANCE[d.bondStrength]),
 		)
 		.force(
 			"charge",
 			forceManyBody<Person>()
 				.strength((d) => {
+					if (d.isEgo) return PHYSICS.repulsion * 2;
 					const degree = degreeMap.get(d.id) ?? 0;
-					const r = getVisualRadius(degree, maxDegree, d.isEgo);
-					// Charge proportional to -radius^2 prevents hub collapse
-					return -(r * r) / 2;
+					return PHYSICS.repulsion * (1 + Math.min(degree * 0.05, 0.5));
 				})
 				.distanceMax(PHYSICS.chargeDistanceMax),
 		)
@@ -402,9 +408,8 @@ export function createSimulation(
 			"collide",
 			forceCollide<Person>()
 				.radius((d) => {
-					const degree = degreeMap.get(d.id) ?? 0;
-					const r = getVisualRadius(degree, maxDegree, d.isEgo);
-					return r + PHYSICS.collisionPadding + Math.min(degree * 1.5, 12);
+					const r = getVisualRadius(0, 0, d.isEgo);
+					return r + PHYSICS.collisionPadding;
 				})
 				.strength(PHYSICS.collideStrength)
 				.iterations(PHYSICS.collideIterations),
@@ -461,9 +466,8 @@ export function syncData(
 		| undefined;
 	if (collideForce) {
 		collideForce.radius((d: Person) => {
-			const degree = degreeMap.get(d.id) ?? 0;
-			const r = getVisualRadius(degree, maxDegree, d.isEgo);
-			return r + 6 + Math.min(degree * 1.5, 12);
+			const r = getVisualRadius(0, 0, d.isEgo);
+			return r + PHYSICS.collisionPadding;
 		});
 	}
 

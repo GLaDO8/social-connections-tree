@@ -1,6 +1,6 @@
 import type { Person, Relationship, SocialGraph } from "@/types/graph";
 
-/** Compute visual radius for a node based on its connection count. */
+/** Compute visual radius for a node. Uniform size for all non-ego nodes. */
 export function getVisualRadius(
 	degree: number,
 	maxDegree: number,
@@ -9,11 +9,7 @@ export function getVisualRadius(
 	egoRadius = 20,
 ): number {
 	if (isEgo) return egoRadius;
-	if (maxDegree <= 1) return nodeRadius;
-	const min = nodeRadius * 0.58;
-	const max = nodeRadius * 1.5;
-	const normalized = Math.sqrt(degree) / Math.sqrt(maxDegree);
-	return min + normalized * (max - min);
+	return nodeRadius;
 }
 
 /** Compute degree map and max degree (excluding ego) for node sizing. */
